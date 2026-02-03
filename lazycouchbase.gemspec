@@ -8,16 +8,17 @@ Gem::Specification.new do |spec|
   spec.authors = ["Andy Huynh"]
   spec.email = ["2831414+andy4thehuynh@users.noreply.github.com"]
 
-  spec.summary = ""
-  spec.description = ""
-  spec.homepage = ""
-  spec.required_ruby_version = ">= 3.1.0"
+  spec.summary = "A keyboard-driven TUI for Couchbase"
+  spec.description = "LazyCouchbase is a terminal user interface for browsing and querying Couchbase databases, inspired by lazygit and lazydocker."
+  spec.homepage = "https://github.com/andy4thehuynh/lazycouchbase"
+  spec.license = "MIT"
+  spec.required_ruby_version = ">= 3.2.0"
 
-  spec.metadata["allowed_push_host"] = ""
+  spec.metadata["allowed_push_host"] = "https://rubygems.org"
 
   spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["source_code_uri"] = "https://github.com/andy4thehuynh/lazycouchbase"
-  spec.metadata["changelog_uri"] = ""
+  spec.metadata["changelog_uri"] = "https://github.com/andy4thehuynh/lazycouchbase/blob/main/CHANGELOG.md"
 
   # Specify which files should be added to the gem when it is released.
   # The `git ls-files -z` loads the files in the RubyGem that have been added into git.
