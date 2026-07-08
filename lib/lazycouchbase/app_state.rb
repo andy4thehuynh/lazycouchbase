@@ -1,0 +1,157 @@
+# frozen_string_literal: true
+
+module Lazycouchbase
+  # Pure, renderer-agnostic state for the TUI.
+  #
+  # Holds what is on screen (buckets, collections, documents, query buffer,
+  # status line) and where the user is (focused pane, mode, selections).
+  # It knows nothing about Couchbase or the terminal, which keeps it fully
+  # unit-testable.
+  class AppState
+    PANES = %i[buckets collections documents].freeze
+    MODES = %i[normal query document help].freeze
+
+    attr_reader :mode, :focused_pane, :buckets, :collections, :documents,
+                :bucket_index, :collection_index, :document_index,
+                :query_text, :document_scroll, :document_body, :document_line_count
+    attr_accessor :document_id, :query_rows, :query_status,
+                  :status_message, :status_kind, :connection_label,
+                  :document_view_height
+
+    def initialize
+      @mode = :normal
+      @focused_pane = :buckets
+      @buckets = []
+      @collections = []
+      @documents = []
+      @bucket_index = 0
+      @collection_index = 0
+      @document_index = 0
+      @document_body = ""
+      @document_line_count = 0
+      @document_scroll = 0
+      @document_view_height = 0
+      @query_text = ""
+      @query_rows = []
+      @status_message = ""
+      @status_kind = :info
+      @connection_label = ""
+    end
+
+    def switch_mode(mode)
+      raise ArgumentError, "unknown mode #{mode.inspect}" unless MODES.include?(mode)
+
+      @mode = mode
+    end
+
+    def focus(pane)
+      raise ArgumentError, "unknown pane #{pane.inspect}" unless PANES.include?(pane)
+
+      @focused_pane = pane
+    end
+
+    def focus_next
+      focus(PANES[(PANES.index(@focused_pane) + 1) % PANES.size])
+    end
+
+    def focus_previous
+      focus(PANES[(PANES.index(@focused_pane) - 1) % PANES.size])
+    end
+
+    def buckets=(names)
+      @buckets = names
+      @bucket_index = 0
+      self.collections = []
+    end
+
+    def collections=(refs)
+      @collections = refs
+      @collection_index = 0
+      self.documents = []
+    end
+
+    def documents=(ids)
+      @documents = ids
+      @document_index = 0
+    end
+
+    def selected_bucket
+      @buckets[@bucket_index]
+    end
+
+    def selected_collection
+      @collections[@collection_index]
+    end
+
+    def selected_document
+      @documents[@document_index]
+    end
+
+    # Returns the new index, or nil when the name is unknown.
+    def select_bucket(name)
+      index = @buckets.index(name)
+      @bucket_index = index if index
+      index
+    end
+
+    # Returns the new index, or nil when the selection did not change.
+    def move_selection(delta)
+      select_index((focused_index + delta).clamp(0, [focused_list.size - 1, 0].max))
+    end
+
+    # Returns the new index, or nil when the selection did not change.
+    def select_edge(edge)
+      select_index(edge == :first ? 0 : focused_list.size - 1)
+    end
+
+    def document_body=(text)
+      @document_body = text
+      @document_line_count = text.lines.size
+    end
+
+    # Scrolling stops once the last line is visible; before the view has
+    # reported its height, fall back to keeping at least one line on screen.
+    def document_scroll=(value)
+      visible = document_view_height.positive? ? document_view_height : 1
+      @document_scroll = value.clamp(0, [document_line_count - visible, 0].max)
+    end
+
+    def query_text=(value)
+      @query_text = value || ""
+    end
+
+    def info(message)
+      @status_message = message
+      @status_kind = :info
+    end
+
+    def error(message)
+      @status_message = message
+      @status_kind = :error
+    end
+
+    private
+
+    def select_index(target)
+      return nil if focused_list.empty? || target == focused_index
+
+      self.focused_index = target
+    end
+
+    def focused_list
+      { buckets: @buckets, collections: @collections, documents: @documents }.fetch(@focused_pane)
+    end
+
+    def focused_index
+      { buckets: @bucket_index, collections: @collection_index, documents: @document_index }.fetch(@focused_pane)
+    end
+
+    def focused_index=(value)
+      case @focused_pane
+      when :buckets then @bucket_index = value
+      when :collections then @collection_index = value
+      else @document_index = value
+      end
+    end
+  end
+end

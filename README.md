@@ -1,35 +1,115 @@
-# Lazycouchbase
+# lazycouchbase
 
-TODO: Delete this and the text below, and describe your gem
+A keyboard-driven terminal UI for [Couchbase](https://www.couchbase.com/), in the spirit of
+[lazygit](https://github.com/jesseduffield/lazygit) and
+[lazydocker](https://github.com/jesseduffield/lazydocker). Browse buckets, scopes, and
+collections, peek at documents, and run ad-hoc N1QL queries without leaving your terminal.
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/lazycouchbase`. To experiment with that code, run `bin/console` for an interactive prompt.
+Built on [ratatui_ruby](https://rubygems.org/gems/ratatui_ruby) and the official
+[couchbase](https://rubygems.org/gems/couchbase) Ruby SDK.
+
+```text
+┌ [1] Buckets (2) ─────┐┌ [3] Documents (50) ──────────────────────────────┐
+│❯ beer-sample         ││❯ 21st_amendment_brewery_cafe                     │
+│  travel-sample       ││  21st_amendment_brewery_cafe-21a_ipa             │
+│                      ││  357                                             │
+└──────────────────────┘│  512_brewing_company                             │
+┌ [2] Collections (1) ─┐│  512_brewing_company-512_alt                     │
+│❯ _default._default   ││  512_brewing_company-512_bruin                   │
+│                      ││  ...                                             │
+└──────────────────────┘└──────────────────────────────────────────────────┘
+ localhost │ Connected      j/k: move │ enter: open │ :: query │ q: quit
+```
 
 ## Installation
 
-TODO: Replace `UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG` with your gem name right after releasing it to RubyGems.org. Please do not do it earlier due to security reasons. Alternatively, replace this section with instructions to install your gem from git if you don't plan to release to RubyGems.org.
-
-Install the gem and add to the application's Gemfile by executing:
+Install the gem by executing:
 
 ```bash
-bundle add UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+gem install lazycouchbase
 ```
 
-If bundler is not being used to manage dependencies, install the gem by executing:
+Or add it to your application's Gemfile:
 
 ```bash
-gem install UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+bundle add lazycouchbase
 ```
+
+The `couchbase` and `ratatui_ruby` dependencies ship native extensions; prebuilt binaries
+exist for common platforms, and building from source requires a C++ toolchain (couchbase)
+and a Rust toolchain (ratatui_ruby).
 
 ## Usage
 
-TODO: Write usage instructions here
+```bash
+lazycouchbase                                  # connect to couchbase://localhost
+lazycouchbase --host db.example.com            # another host (or a full connection string)
+lazycouchbase -u admin -p secret -b beer-sample
+lazycouchbase --help
+```
+
+### Keybindings
+
+| Key                 | Action                                        |
+| ------------------- | --------------------------------------------- |
+| `tab` / `shift-tab` | Cycle panes                                   |
+| `1` / `2` / `3`     | Focus buckets / collections / documents       |
+| `j` / `k`, arrows   | Move selection (loads the panes to the right) |
+| `g` / `G`           | Jump to first / last entry                    |
+| `enter`             | Drill in; open the selected document          |
+| `:`                 | Open the N1QL query editor                    |
+| `r`                 | Refresh the focused pane                      |
+| `esc`               | Back                                          |
+| `?`                 | Help                                          |
+| `q` / `ctrl-c`      | Quit                                          |
+
+In the query editor, type a N1QL statement and press `enter` to run it; results are shown
+below the input. In the document view, `j`/`k` and `page up`/`page down` scroll.
+
+### Configuration
+
+lazycouchbase reads `$XDG_CONFIG_HOME/lazycouchbase/config.toml`
+(`~/.config/lazycouchbase/config.toml` by default):
+
+```toml
+[connection]
+host = "localhost"          # or a full connection string like "couchbases://db.example.com"
+username = "Administrator"
+password = "password"
+bucket = "beer-sample"      # optional: bucket to select at startup
+
+[ui]
+document_limit = 50         # documents listed per collection
+```
+
+Every `[connection]` value can also be set through `LAZYCOUCHBASE_HOST`,
+`LAZYCOUCHBASE_USERNAME`, `LAZYCOUCHBASE_PASSWORD`, and `LAZYCOUCHBASE_BUCKET` environment
+variables, and `document_limit` through `LAZYCOUCHBASE_DOCUMENT_LIMIT`. Precedence, lowest
+to highest: defaults, config file, environment variables, command-line flags.
+
+Listing documents uses a `SELECT META().id` query, so collections you browse need a
+[primary index](https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/createprimaryindex.html)
+(`CREATE PRIMARY INDEX ON \`bucket\`.\`scope\`.\`collection\``). Without one, the documents
+pane shows the index error in the status bar — queries by `META().id` from the query editor
+still work.
 
 ## Development
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+After checking out the repo, run `bundle install` to install dependencies. Then run
+`bundle exec rake spec` to run the tests and `bundle exec rubocop` to lint. You can also run
+`bin/lazycouchbase` directly to try the TUI.
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+Most specs run against an in-memory fake client and ratatui_ruby's headless test terminal,
+so they need no running cluster. Integration specs are skipped unless a Couchbase cluster is
+reachable; point them at one with `COUCHBASE_TEST_HOST`, `COUCHBASE_TEST_USERNAME`,
+`COUCHBASE_TEST_PASSWORD`, and `COUCHBASE_TEST_BUCKET`.
+
+To install this gem onto your local machine, run `bundle exec rake install`. To release a
+new version, update the version number in `version.rb`, and then run `bundle exec rake
+release`, which will create a git tag for the version, push git commits and the created tag,
+and push the `.gem` file to [rubygems.org](https://rubygems.org).
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/andy4thehuynh/lazycouchbase.
+Bug reports and pull requests are welcome on GitHub at
+https://github.com/andy4thehuynh/lazycouchbase.
