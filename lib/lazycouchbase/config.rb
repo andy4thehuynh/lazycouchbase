@@ -57,7 +57,7 @@ module Lazycouchbase
     end
 
     def document_limit
-      value = @overrides["document_limit"] || section("ui")["document_limit"]
+      value = setting("document_limit", section_name: "ui")
       return DEFAULT_DOCUMENT_LIMIT if value.nil?
 
       Integer(value)
@@ -67,8 +67,18 @@ module Lazycouchbase
 
     private
 
-    def setting(key)
-      @overrides[key] || ENV.fetch("LAZYCOUCHBASE_#{key.upcase}", nil) || section("connection")[key]
+    def setting(key, section_name: "connection")
+      present(@overrides[key]) ||
+        present(ENV.fetch("LAZYCOUCHBASE_#{key.upcase}", nil)) ||
+        present(section(section_name)[key])
+    end
+
+    # Empty strings (e.g. `export LAZYCOUCHBASE_PASSWORD=` in a CI template)
+    # count as unset rather than overriding lower-precedence values.
+    def present(value)
+      return nil if value.respond_to?(:empty?) && value.empty?
+
+      value
     end
 
     def section(name)

@@ -192,6 +192,14 @@ RSpec.describe Lazycouchbase::KeyHandler do
       expect(state.document_scroll).to eq(0)
     end
 
+    it "leaves the last page visible when G jumps to the bottom" do
+      state.document_view_height = 25
+
+      handler.call(key("G", modifiers: ["shift"]))
+
+      expect(state.document_scroll).to eq(15)
+    end
+
     it "returns to normal mode on esc" do
       handler.call(key("esc"))
 

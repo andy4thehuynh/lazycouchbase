@@ -13,9 +13,10 @@ module Lazycouchbase
 
     attr_reader :mode, :focused_pane, :buckets, :collections, :documents,
                 :bucket_index, :collection_index, :document_index,
-                :query_text, :document_scroll
-    attr_accessor :document_id, :document_body, :query_rows, :query_status,
-                  :status_message, :status_kind, :connection_label
+                :query_text, :document_scroll, :document_body, :document_line_count
+    attr_accessor :document_id, :query_rows, :query_status,
+                  :status_message, :status_kind, :connection_label,
+                  :document_view_height
 
     def initialize
       @mode = :normal
@@ -27,7 +28,9 @@ module Lazycouchbase
       @collection_index = 0
       @document_index = 0
       @document_body = ""
+      @document_line_count = 0
       @document_scroll = 0
+      @document_view_height = 0
       @query_text = ""
       @query_rows = []
       @status_message = ""
@@ -93,22 +96,24 @@ module Lazycouchbase
 
     # Returns the new index, or nil when the selection did not change.
     def move_selection(delta)
-      list = focused_list
-      return nil if list.empty?
-
-      target = (focused_index + delta).clamp(0, list.size - 1)
-      return nil if target == focused_index
-
-      self.focused_index = target
+      select_index((focused_index + delta).clamp(0, [focused_list.size - 1, 0].max))
     end
 
+    # Returns the new index, or nil when the selection did not change.
     def select_edge(edge)
-      move_selection(edge == :first ? -focused_list.size : focused_list.size)
+      select_index(edge == :first ? 0 : focused_list.size - 1)
     end
 
+    def document_body=(text)
+      @document_body = text
+      @document_line_count = text.lines.size
+    end
+
+    # Scrolling stops once the last line is visible; before the view has
+    # reported its height, fall back to keeping at least one line on screen.
     def document_scroll=(value)
-      max = [document_body.lines.size - 1, 0].max
-      @document_scroll = value.clamp(0, max)
+      visible = document_view_height.positive? ? document_view_height : 1
+      @document_scroll = value.clamp(0, [document_line_count - visible, 0].max)
     end
 
     def query_text=(value)
@@ -126,6 +131,12 @@ module Lazycouchbase
     end
 
     private
+
+    def select_index(target)
+      return nil if focused_list.empty? || target == focused_index
+
+      self.focused_index = target
+    end
 
     def focused_list
       { buckets: @buckets, collections: @collections, documents: @documents }.fetch(@focused_pane)

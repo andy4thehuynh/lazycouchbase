@@ -143,7 +143,7 @@ RSpec.describe Lazycouchbase::AppState do
   end
 
   describe "#document_scroll=" do
-    it "clamps to the document's line count" do
+    it "clamps to the document's line count before the view reports a height" do
       state.document_body = "line 1\nline 2\nline 3\n"
 
       state.document_scroll = 99
@@ -151,6 +151,32 @@ RSpec.describe Lazycouchbase::AppState do
 
       state.document_scroll = -5
       expect(state.document_scroll).to eq(0)
+    end
+
+    it "stops once the last page is visible when the view height is known" do
+      state.document_body = Array.new(40) { |line| "line #{line}" }.join("\n")
+      state.document_view_height = 25
+
+      state.document_scroll = 99
+
+      expect(state.document_scroll).to eq(15)
+    end
+
+    it "does not scroll a document shorter than the view" do
+      state.document_body = "one line"
+      state.document_view_height = 25
+
+      state.document_scroll = 5
+
+      expect(state.document_scroll).to eq(0)
+    end
+  end
+
+  describe "#document_body=" do
+    it "caches the line count" do
+      state.document_body = "a\nb\nc"
+
+      expect(state.document_line_count).to eq(3)
     end
   end
 

@@ -80,10 +80,15 @@ module Lazycouchbase
 
     def activate
       case state.focused_pane
-      when :buckets then state.focus(:collections) && nil
-      when :collections then state.focus(:documents) && nil
+      when :buckets then focus_pane(:collections)
+      when :collections then focus_pane(:documents)
       else state.selected_document && :open_document
       end
+    end
+
+    def focus_pane(pane)
+      state.focus(pane)
+      nil
     end
 
     def open_query
@@ -91,9 +96,14 @@ module Lazycouchbase
       nil
     end
 
+    def close_query
+      state.switch_mode(:normal)
+      nil
+    end
+
     def query_mode(event)
       case event.code
-      when "esc" then state.switch_mode(:normal) && nil
+      when "esc" then close_query
       when "enter" then state.query_text.strip.empty? ? nil : :run_query
       when "backspace" then delete_query_char
       else append_query(event)
@@ -120,7 +130,7 @@ module Lazycouchbase
       case event.code
       when "esc", "q" then state.switch_mode(:normal)
       when "g" then state.document_scroll = 0
-      when "G" then state.document_scroll = state.document_body.lines.size
+      when "G" then state.document_scroll = state.document_line_count
       else scroll_document(event)
       end
       nil

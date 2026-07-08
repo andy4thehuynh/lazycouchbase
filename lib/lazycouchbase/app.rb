@@ -24,14 +24,10 @@ module Lazycouchbase
       RatatuiRuby.run do |tui|
         @state.connection_label = @client.connection.host
         @state.info("Connecting to #{@client.connection_string}...")
-        tui.draw { |frame| @view.render(tui, frame, @state) }
+        draw(tui)
         bootstrap
-        loop do
-          tui.draw { |frame| @view.render(tui, frame, @state) }
-          event = tui.poll_event(timeout: POLL_TIMEOUT)
-          next if event.none?
-          break if perform(@key_handler.call(event)) == :quit
-        end
+        draw(tui)
+        event_loop(tui)
       end
       self
     ensure
@@ -40,12 +36,36 @@ module Lazycouchbase
 
     private
 
+    # Redraws only after an event was handled: an idle TUI stays idle.
+    def event_loop(tui)
+      loop do
+        event = tui.poll_event(timeout: POLL_TIMEOUT)
+        next if event.none?
+        break if perform(@key_handler.call(event)) == :quit
+
+        draw(tui)
+      end
+    end
+
+    def draw(tui)
+      tui.draw { |frame| @view.render(tui, frame, @state) }
+    end
+
     def bootstrap
       return unless guard { @state.buckets = @client.bucket_names }
 
-      @state.select_bucket(@config.connection.bucket) if @config.connection.bucket
-      load_collections
       @state.info("Connected to #{@client.connection_string}")
+      select_configured_bucket
+      load_collections
+    end
+
+    # An unknown --bucket/-b should not silently land the user in the first
+    # bucket without a word.
+    def select_configured_bucket
+      wanted = @config.connection.bucket
+      return if wanted.nil? || @state.select_bucket(wanted)
+
+      @state.error("Bucket #{wanted.inspect} not found")
     end
 
     def perform(action)
@@ -63,7 +83,11 @@ module Lazycouchbase
       bucket = @state.selected_bucket
       return unless bucket
 
-      guard { @state.collections = @client.collections(bucket) } && load_documents
+      if guard { @state.collections = @client.collections(bucket) }
+        load_documents
+      else
+        @state.collections = []
+      end
     end
 
     def load_documents
@@ -71,7 +95,8 @@ module Lazycouchbase
       ref = @state.selected_collection
       return unless bucket && ref
 
-      guard { @state.documents = @client.document_ids(bucket, ref, limit: @config.document_limit) }
+      loaded = guard { @state.documents = @client.document_ids(bucket, ref, limit: @config.document_limit) }
+      @state.documents = [] unless loaded
     end
 
     def open_document
@@ -88,7 +113,7 @@ module Lazycouchbase
     def run_query
       guard do
         result = @client.query(@state.query_text)
-        @state.query_rows = result.rows.map { |row| row.is_a?(String) ? row : JSON.generate(row) }
+        @state.query_rows = result.rows.map { |row| flat(row) }
         @state.query_status = "#{result.status} in #{result.elapsed_ms}ms"
         @state.info("Query returned #{result.rows.size} rows in #{result.elapsed_ms}ms")
       end
@@ -96,14 +121,32 @@ module Lazycouchbase
 
     def refresh
       case @state.focused_pane
-      when :buckets then guard { @state.buckets = @client.bucket_names } && load_collections
+      when :buckets then refresh_buckets
       when :collections then load_collections
       else load_documents
       end
     end
 
+    def refresh_buckets
+      current = @state.selected_bucket
+      return unless guard { @state.buckets = @client.bucket_names }
+
+      @state.select_bucket(current) if current
+      load_collections
+    end
+
+    # Documents are not guaranteed to be JSON-serializable (binary blobs,
+    # non-UTF-8 strings); fall back to #inspect rather than crash the TUI.
     def pretty(content)
       content.is_a?(String) ? content : JSON.pretty_generate(content)
+    rescue StandardError
+      content.inspect
+    end
+
+    def flat(row)
+      row.is_a?(String) ? row : JSON.generate(row)
+    rescue StandardError
+      row.inspect
     end
 
     def guard

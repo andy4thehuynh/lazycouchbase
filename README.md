@@ -84,8 +84,8 @@ document_limit = 50         # documents listed per collection
 
 Every `[connection]` value can also be set through `LAZYCOUCHBASE_HOST`,
 `LAZYCOUCHBASE_USERNAME`, `LAZYCOUCHBASE_PASSWORD`, and `LAZYCOUCHBASE_BUCKET` environment
-variables. Precedence, lowest to highest: defaults, config file, environment variables,
-command-line flags.
+variables, and `document_limit` through `LAZYCOUCHBASE_DOCUMENT_LIMIT`. Precedence, lowest
+to highest: defaults, config file, environment variables, command-line flags.
 
 Listing documents uses a `SELECT META().id` query, so collections you browse need a
 [primary index](https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/createprimaryindex.html)

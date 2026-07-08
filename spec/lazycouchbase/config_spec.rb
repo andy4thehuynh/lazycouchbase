@@ -69,6 +69,18 @@ RSpec.describe Lazycouchbase::Config do
       end
     end
 
+    it "treats empty environment variables as unset" do
+      with_temp_config_dirs do |config_dir, _data_dir|
+        create_config_file(config_dir, "config.toml", <<~TOML)
+          [connection]
+          password = "from-file"
+        TOML
+        ENV["LAZYCOUCHBASE_PASSWORD"] = ""
+
+        expect(described_class.load.connection.password).to eq("from-file")
+      end
+    end
+
     it "ignores nil overrides" do
       with_temp_config_dirs do
         connection = described_class.load({ host: nil, bucket: "beer-sample" }).connection
@@ -117,6 +129,16 @@ RSpec.describe Lazycouchbase::Config do
                                    overrides: { document_limit: 25 })
 
       expect(config.document_limit).to eq(25)
+    end
+
+    it "reads LAZYCOUCHBASE_DOCUMENT_LIMIT from the environment" do
+      ENV["LAZYCOUCHBASE_DOCUMENT_LIMIT"] = "75"
+
+      config = described_class.new(file_data: { "ui" => { "document_limit" => 100 } })
+
+      expect(config.document_limit).to eq(75)
+    ensure
+      ENV.delete("LAZYCOUCHBASE_DOCUMENT_LIMIT")
     end
 
     it "raises Lazycouchbase::Error when not an integer" do

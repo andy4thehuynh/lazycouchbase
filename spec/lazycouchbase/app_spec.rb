@@ -103,6 +103,61 @@ RSpec.describe Lazycouchbase::App, :tui do
     expect(failing.state.status_message).to include("cluster unreachable")
   end
 
+  it "keeps a partial-load error visible instead of reporting Connected" do
+    flaky_client = FakeClient.new(
+      buckets: { "beer-sample" => { "_default._default" => {} } },
+      error_on: { document_ids: "no primary index" }
+    )
+    flaky = described_class.new(client: flaky_client, config: config)
+
+    with_test_terminal(100, 30) do
+      inject_keys("q")
+      flaky.run
+    end
+
+    expect(flaky.state.status_kind).to eq(:error)
+    expect(flaky.state.status_message).to include("no primary index")
+  end
+
+  it "clears stale collections when a bucket's collections fail to load" do
+    flaky = described_class.new(
+      client: FakeClient.new(
+        buckets: { "beer-sample" => { "_default._default" => {} } },
+        error_on: { collections: "permission denied" }
+      ),
+      config: config
+    )
+
+    with_test_terminal(100, 30) do
+      inject_keys("q")
+      flaky.run
+    end
+
+    expect(flaky.state.collections).to be_empty
+    expect(flaky.state.status_message).to include("permission denied")
+  end
+
+  it "warns when the configured bucket does not exist" do
+    typo_config = Lazycouchbase::Config.new(overrides: { bucket: "travel-sampel" })
+    picky = described_class.new(client: client, config: typo_config)
+
+    with_test_terminal(100, 30) do
+      inject_keys("q")
+      picky.run
+    end
+
+    expect(picky.state.status_kind).to eq(:error)
+    expect(picky.state.status_message).to include("travel-sampel")
+    expect(picky.state.selected_bucket).to eq("beer-sample")
+  end
+
+  it "keeps the selected bucket when refreshing the buckets pane" do
+    run_app("j", "r", :ctrl_c)
+
+    expect(app.state.selected_bucket).to eq("travel-sample")
+    expect(app.state.documents).to eq(%w[airline_10])
+  end
+
   it "draws the loaded data to the terminal" do
     screen = nil
     with_test_terminal(100, 30) do
