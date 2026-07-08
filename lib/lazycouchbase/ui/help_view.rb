@@ -22,10 +22,11 @@ module Lazycouchbase
         ["  q / ctrl-c", "quit"]
       ].freeze
 
+      TEXT = BINDINGS.map { |keys, action| action.empty? ? keys : "#{keys.ljust(22)} #{action}" }.join("\n").freeze
+
       def render(tui, frame, area)
-        text = BINDINGS.map { |keys, action| action.empty? ? keys : "#{keys.ljust(22)} #{action}" }.join("\n")
         help = tui.paragraph(
-          text: text,
+          text: TEXT,
           block: tui.block(
             title: " Help ",
             borders: [:all],

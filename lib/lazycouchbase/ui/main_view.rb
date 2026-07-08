@@ -7,6 +7,8 @@ module Lazycouchbase
     # Top-level layout: a lazygit-style sidebar (buckets over collections),
     # a main panel whose content follows the mode, and a status bar.
     class MainView
+      PANE_LABELS = { buckets: "[1] Buckets", collections: "[2] Collections", documents: "[3] Documents" }.freeze
+
       def initialize
         @buckets_pane = ListPane.new
         @collections_pane = ListPane.new
@@ -52,17 +54,10 @@ module Lazycouchbase
           constraints: [tui.constraint_percentage(40), tui.constraint_fill(1)]
         )
 
-        @buckets_pane.render(tui, frame, buckets_area, ListPane::Props.new(
-                                                         title: " [1] Buckets (#{state.buckets.size}) ",
-                                                         items: state.buckets, selected: state.bucket_index,
-                                                         focused: state.focused_pane == :buckets
-                                                       ))
-        @collections_pane.render(tui, frame, collections_area, ListPane::Props.new(
-                                                                 title: " [2] Collections (#{state.collections.size}) ",
-                                                                 items: state.collections,
-                                                                 selected: state.collection_index,
-                                                                 focused: state.focused_pane == :collections
-                                                               ))
+        @buckets_pane.render(tui, frame, buckets_area,
+                             props(state, :buckets, state.buckets, state.bucket_index))
+        @collections_pane.render(tui, frame, collections_area,
+                                 props(state, :collections, state.collections, state.collection_index))
       end
 
       def render_main(tui, frame, area, state)
@@ -70,12 +65,18 @@ module Lazycouchbase
         when :document then @document_view.render(tui, frame, area, state)
         when :query then @query_view.render(tui, frame, area, state)
         else
-          @documents_pane.render(tui, frame, area, ListPane::Props.new(
-                                                     title: " [3] Documents (#{state.documents.size}) ",
-                                                     items: state.documents, selected: state.document_index,
-                                                     focused: state.focused_pane == :documents
-                                                   ))
+          @documents_pane.render(tui, frame, area,
+                                 props(state, :documents, state.documents, state.document_index))
         end
+      end
+
+      def props(state, pane, items, selected)
+        ListPane::Props.new(
+          title: " #{PANE_LABELS.fetch(pane)} (#{items.size}) ",
+          items: items,
+          selected: selected,
+          focused: state.focused_pane == pane
+        )
       end
     end
   end
