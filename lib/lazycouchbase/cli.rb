@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "optparse"
+require "ratatui_ruby"
 
 module Lazycouchbase
   # Command-line entry point: parses flags, builds the Config and Client,
@@ -25,6 +26,9 @@ module Lazycouchbase
       1
     rescue Lazycouchbase::Error => e
       @stderr.puts("Error: #{e.message}")
+      1
+    rescue RatatuiRuby::Error => e
+      @stderr.puts("Terminal error: #{e.message} (lazycouchbase needs an interactive terminal)")
       1
     rescue Interrupt
       130

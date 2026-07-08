@@ -85,6 +85,15 @@ RSpec.describe Lazycouchbase::CLI do
       expect(stderr.string).to include("Error: cluster unreachable")
     end
 
+    it "explains terminal errors, such as running without a TTY" do
+      allow(app).to receive(:run).and_raise(RatatuiRuby::Error::Terminal, "No such device or address")
+
+      status = with_temp_config_dirs { cli.run }
+
+      expect(status).to eq(1)
+      expect(stderr.string).to include("needs an interactive terminal")
+    end
+
     it "exits with 130 on interrupt" do
       allow(app).to receive(:run).and_raise(Interrupt)
 
