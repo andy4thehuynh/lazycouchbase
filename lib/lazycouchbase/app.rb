@@ -22,6 +22,9 @@ module Lazycouchbase
 
     def run
       RatatuiRuby.run do |tui|
+        @state.connection_label = @client.connection.host
+        @state.info("Connecting to #{@client.connection_string}...")
+        tui.draw { |frame| @view.render(tui, frame, @state) }
         bootstrap
         loop do
           tui.draw { |frame| @view.render(tui, frame, @state) }
@@ -38,7 +41,6 @@ module Lazycouchbase
     private
 
     def bootstrap
-      @state.connection_label = @client.connection.host
       return unless guard { @state.buckets = @client.bucket_names }
 
       @state.select_bucket(@config.connection.bucket) if @config.connection.bucket

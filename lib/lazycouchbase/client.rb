@@ -11,6 +11,10 @@ module Lazycouchbase
   class Client
     class Error < Lazycouchbase::Error; end
 
+    # Milliseconds to wait for the initial cluster bootstrap; without this the
+    # SDK can block for minutes on an unreachable host.
+    CONNECT_TIMEOUT_MS = 10_000
+
     QueryResult = Data.define(:rows, :status, :elapsed_ms)
 
     CollectionRef = Data.define(:scope, :collection) do
@@ -87,8 +91,12 @@ module Lazycouchbase
       @cluster ||= wrap_errors("connecting to #{connection_string}") do
         require "couchbase"
 
+        # The C++ core logs straight to the terminal, which corrupts the TUI.
+        Couchbase.log_level = :off unless ENV["COUCHBASE_BACKEND_LOG_LEVEL"]
+
         options = Couchbase::Options::Cluster.new
         options.authenticate(connection.username, connection.password)
+        options.bootstrap_timeout = CONNECT_TIMEOUT_MS
         Couchbase::Cluster.connect(connection_string, options)
       end
     end
