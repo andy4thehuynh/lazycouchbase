@@ -1,16 +1,6 @@
 # frozen_string_literal: true
 
 RSpec.describe Lazycouchbase::Config do
-  around do |example|
-    saved = ENV.to_h.slice(*%w[LAZYCOUCHBASE_HOST LAZYCOUCHBASE_USERNAME LAZYCOUCHBASE_PASSWORD LAZYCOUCHBASE_BUCKET])
-    %w[LAZYCOUCHBASE_HOST LAZYCOUCHBASE_USERNAME LAZYCOUCHBASE_PASSWORD LAZYCOUCHBASE_BUCKET].each do |key|
-      ENV.delete(key)
-    end
-    example.run
-  ensure
-    saved.each { |key, value| ENV[key] = value }
-  end
-
   describe ".default_path" do
     it "lives under XDG_CONFIG_HOME when set" do
       with_temp_config_dirs do |config_dir, _data_dir|
