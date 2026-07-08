@@ -67,10 +67,11 @@ RSpec.configure do |config|
   config.include CouchbaseHelpers
 
   config.before(:suite) do
+    reporter = RSpec.configuration.reporter
     if CouchbaseHelpers.couchbase_available?
-      puts "Couchbase cluster available at #{CouchbaseHelpers::COUCHBASE_TEST_HOST}"
+      reporter.message("Couchbase cluster available at #{CouchbaseHelpers::COUCHBASE_TEST_HOST}")
     else
-      puts "Couchbase cluster not available - integration tests will be skipped"
+      reporter.message("Couchbase cluster not available - integration tests will be skipped")
     end
   end
 end
