@@ -12,6 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `/` fuzzy filter for the buckets, collections, and documents panes: type to
   narrow with case-insensitive subsequence matching, `↑`/`↓` to move the
   highlight, `enter` to select, `esc` to cancel.
+- Document view cursor with a `bucket › collection › id › path` breadcrumb in
+  the status bar.
+- `/` line search inside the document view, with `n`/`N` cycling matches.
+- `t` keys-only outline of the open document; `enter` jumps to the selected key.
+- `y`/`Y` copy the document or the value under the cursor to the clipboard
+  (via `wl-copy`, `xclip`, `xsel`, or `pbcopy`).
+- Long document lines soft-wrap with a hanging indent instead of being
+  clipped at the pane edge.
 
 ### Fixed
 

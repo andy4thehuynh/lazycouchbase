@@ -62,7 +62,7 @@ module Lazycouchbase
 
       def render_main(tui, frame, area, state)
         case state.mode
-        when :document then @document_view.render(tui, frame, area, state)
+        when :document, :document_search then @document_view.render(tui, frame, area, state)
         when :query then @query_view.render(tui, frame, area, state)
         else
           @documents_pane.render(tui, frame, area,

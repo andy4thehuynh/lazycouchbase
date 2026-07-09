@@ -9,15 +9,13 @@ module Lazycouchbase
   # unit-testable.
   class AppState
     PANES = %i[buckets collections documents].freeze
-    MODES = %i[normal query document help filter].freeze
+    MODES = %i[normal query document document_search help filter].freeze
 
     attr_reader :mode, :focused_pane, :buckets, :collections, :documents,
                 :bucket_index, :collection_index, :document_index,
-                :query_text, :document_scroll, :document_body, :document_line_count,
-                :filter_text, :filter_index
-    attr_accessor :document_id, :query_rows, :query_status,
-                  :status_message, :status_kind, :connection_label,
-                  :document_view_height
+                :query_text, :filter_text, :filter_index, :doc
+    attr_accessor :query_rows, :query_status,
+                  :status_message, :status_kind, :connection_label
 
     def initialize
       @mode = :normal
@@ -28,10 +26,7 @@ module Lazycouchbase
       @bucket_index = 0
       @collection_index = 0
       @document_index = 0
-      @document_body = ""
-      @document_line_count = 0
-      @document_scroll = 0
-      @document_view_height = 0
+      @doc = DocumentState.new
       @query_text = ""
       @query_rows = []
       @filter_text = ""
@@ -107,16 +102,10 @@ module Lazycouchbase
       select_index(edge == :first ? 0 : focused_list.size - 1)
     end
 
-    def document_body=(text)
-      @document_body = text
-      @document_line_count = text.lines.size
-    end
-
-    # Scrolling stops once the last line is visible; before the view has
-    # reported its height, fall back to keeping at least one line on screen.
-    def document_scroll=(value)
-      visible = document_view_height.positive? ? document_view_height : 1
-      @document_scroll = value.clamp(0, [document_line_count - visible, 0].max)
+    def show_document(id, content)
+      @doc.load(id, content)
+      @status_message = ""
+      switch_mode(:document)
     end
 
     def query_text=(value)

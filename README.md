@@ -65,7 +65,14 @@ lazycouchbase --help
 | `q` / `ctrl-c`      | Quit                                          |
 
 In the query editor, type a N1QL statement and press `enter` to run it; results are shown
-below the input. In the document view, `j`/`k` and `page up`/`page down` scroll.
+below the input.
+
+In the document view, `j`/`k` and `page up`/`page down` move a cursor line, and the status
+bar shows a breadcrumb of where that cursor is (`bucket › collection › id › path`). Long
+values soft-wrap with a hanging indent instead of being clipped. `/` searches lines
+(fuzzy, like the pane filter) with `n`/`N` cycling matches, `t` toggles a keys-only
+outline (`enter` jumps to the selected key), and `y`/`Y` copy the whole document or the
+value under the cursor to the clipboard (needs `wl-copy`, `xclip`, `xsel`, or `pbcopy`).
 
 The `/` filter is a transient fuzzy picker in the style of fzf: type to narrow the focused
 pane (case-insensitive subsequence match, so `ta2` finds `tenant_agent_02.users`), move the

@@ -60,8 +60,25 @@ RSpec.describe Lazycouchbase::App, :tui do
     run_app("3", "j", "enter", :ctrl_c)
 
     expect(app.state.mode).to eq(:document)
-    expect(app.state.document_id).to eq("stout-1")
-    expect(app.state.document_body).to include("\"name\": \"Midnight Stout\"")
+    expect(app.state.doc.id).to eq("stout-1")
+    expect(app.state.doc.body).to include("\"name\": \"Midnight Stout\"")
+  end
+
+  it "yanks the open document to the clipboard" do
+    allow(Lazycouchbase::Clipboard).to receive(:copy).and_return(true)
+
+    run_app("3", "enter", "y", :ctrl_c)
+
+    expect(Lazycouchbase::Clipboard).to have_received(:copy).with(a_string_including("\"name\": \"Hoppy IPA\""))
+    expect(app.state.status_message).to eq("Copied document ipa-1")
+  end
+
+  it "explains when no clipboard tool is available" do
+    allow(Lazycouchbase::Clipboard).to receive(:copy).and_return(false)
+
+    run_app("3", "enter", "Y", :ctrl_c)
+
+    expect(app.state.status_message).to include("No clipboard tool found")
   end
 
   it "returns from the document view with esc" do
@@ -82,7 +99,7 @@ RSpec.describe Lazycouchbase::App, :tui do
     run_app("3", "/", "s", "enter", "enter", :ctrl_c)
 
     expect(app.state.mode).to eq(:document)
-    expect(app.state.document_id).to eq("stout-1")
+    expect(app.state.doc.id).to eq("stout-1")
   end
 
   it "runs a query typed into the query editor" do

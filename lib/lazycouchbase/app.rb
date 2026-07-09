@@ -9,6 +9,10 @@ module Lazycouchbase
   # Client. Client failures land in the status bar instead of crashing.
   class App
     POLL_TIMEOUT = 0.05
+    ACTIONS = %i[
+      load_collections load_documents open_document run_query refresh
+      yank_document yank_value
+    ].freeze
 
     attr_reader :state
 
@@ -69,14 +73,9 @@ module Lazycouchbase
     end
 
     def perform(action)
-      case action
-      when :quit then :quit
-      when :load_collections then load_collections
-      when :load_documents then load_documents
-      when :open_document then open_document
-      when :run_query then run_query
-      when :refresh then refresh
-      end
+      return :quit if action == :quit
+
+      send(action) if ACTIONS.include?(action)
     end
 
     def load_collections
@@ -103,10 +102,26 @@ module Lazycouchbase
       id = @state.selected_document
       guard do
         content = @client.document(@state.selected_bucket, @state.selected_collection, id)
-        @state.document_id = id
-        @state.document_body = pretty(content)
-        @state.document_scroll = 0
-        @state.switch_mode(:document)
+        @state.show_document(id, content)
+      end
+    end
+
+    def yank_document
+      yank(@state.doc.body, "document #{@state.doc.id}")
+    end
+
+    def yank_value
+      path, text = @state.doc.yank_value
+      return unless text
+
+      yank(text, path.empty? ? "value" : path)
+    end
+
+    def yank(text, label)
+      if Clipboard.copy(text)
+        @state.info("Copied #{label}")
+      else
+        @state.error("No clipboard tool found (wl-copy, xclip, xsel, or pbcopy)")
       end
     end
 
@@ -133,14 +148,6 @@ module Lazycouchbase
 
       @state.select_bucket(current) if current
       load_collections
-    end
-
-    # Documents are not guaranteed to be JSON-serializable (binary blobs,
-    # non-UTF-8 strings); fall back to #inspect rather than crash the TUI.
-    def pretty(content)
-      content.is_a?(String) ? content : JSON.pretty_generate(content)
-    rescue StandardError
-      content.inspect
     end
 
     def flat(row)

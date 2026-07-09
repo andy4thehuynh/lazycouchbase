@@ -245,43 +245,98 @@ RSpec.describe Lazycouchbase::KeyHandler do
 
   describe "document mode" do
     before do
-      state.switch_mode(:document)
-      state.document_body = Array.new(40) { |line| "line #{line}" }.join("\n")
+      state.show_document("beer-1", {
+                            "name" => "IPA",
+                            "geo" => { "lat" => 1.5, "lon" => 2.5 },
+                            "notes" => Array.new(20) { |note| "note #{note}" }
+                          })
+      state.doc.view_height = 10
     end
 
-    it "scrolls with j/k and page keys" do
-      handler.call(key("j"))
-      handler.call(key("j"))
+    it "moves the cursor with j/k and the scroll follows" do
+      12.times { handler.call(key("j")) }
+      expect(state.doc.cursor).to eq(12)
+      expect(state.doc.scroll).to eq(3)
+
       handler.call(key("k"))
-      expect(state.document_scroll).to eq(1)
-
-      handler.call(key("page_down"))
-      expect(state.document_scroll).to eq(11)
-
-      handler.call(key("page_up"))
-      expect(state.document_scroll).to eq(1)
+      expect(state.doc.cursor).to eq(11)
+      expect(state.doc.scroll).to eq(3)
     end
 
-    it "jumps to the top and bottom with g and G" do
+    it "jumps to the edges with g and G" do
       handler.call(key("G", modifiers: ["shift"]))
-      expect(state.document_scroll).to eq(39)
+      expect(state.doc.cursor).to eq(state.doc.line_count - 1)
+      expect(state.doc.scroll).to eq(state.doc.line_count - 10)
 
       handler.call(key("g"))
-      expect(state.document_scroll).to eq(0)
-    end
-
-    it "leaves the last page visible when G jumps to the bottom" do
-      state.document_view_height = 25
-
-      handler.call(key("G", modifiers: ["shift"]))
-
-      expect(state.document_scroll).to eq(15)
+      expect(state.doc.cursor).to eq(0)
+      expect(state.doc.scroll).to eq(0)
     end
 
     it "returns to normal mode on esc" do
       handler.call(key("esc"))
 
       expect(state.mode).to eq(:normal)
+    end
+
+    it "opens the line search on / and jumps as the query grows" do
+      handler.call(key("/"))
+      expect(state.mode).to eq(:document_search)
+
+      "lon".chars.each { |char| handler.call(key(char)) }
+
+      expect(state.doc.visual_lines[state.doc.cursor].text).to include("\"lon\"")
+    end
+
+    it "keeps the match on enter and cycles with n/N" do
+      handler.call(key("/"))
+      "note".chars.each { |char| handler.call(key(char)) }
+      handler.call(key("enter"))
+      expect(state.mode).to eq(:document)
+      first = state.doc.cursor
+
+      handler.call(key("n"))
+      expect(state.doc.cursor).to be > first
+
+      handler.call(key("N", modifiers: ["shift"]))
+      expect(state.doc.cursor).to eq(first)
+    end
+
+    it "restores the cursor when the search is cancelled" do
+      3.times { handler.call(key("j")) }
+
+      handler.call(key("/"))
+      handler.call(key("n"))
+      handler.call(key("esc"))
+
+      expect(state.mode).to eq(:document)
+      expect(state.doc.cursor).to eq(3)
+    end
+
+    it "toggles the keys-only outline with t and jumps on enter" do
+      handler.call(key("t"))
+      expect(state.doc.outline?).to be(true)
+
+      handler.call(key("j"))
+      handler.call(key("j"))
+      handler.call(key("enter"))
+
+      expect(state.doc.outline?).to be(false)
+      expect(state.doc.visual_lines[state.doc.cursor].text).to include("\"lat\"")
+    end
+
+    it "refuses the outline for documents without keys" do
+      state.show_document("blob", "plain text")
+
+      handler.call(key("t"))
+
+      expect(state.doc.outline?).to be(false)
+      expect(state.status_message).to include("No keys")
+    end
+
+    it "yanks the document with y and the value with Y" do
+      expect(handler.call(key("y"))).to eq(:yank_document)
+      expect(handler.call(key("Y", modifiers: ["shift"]))).to eq(:yank_value)
     end
   end
 

@@ -82,9 +82,7 @@ RSpec.describe Lazycouchbase::UI::MainView, :tui do
   end
 
   it "renders the document view in document mode" do
-    state.document_id = "airline_10"
-    state.document_body = "{\n  \"name\": \"40-Mile Air\"\n}"
-    state.switch_mode(:document)
+    state.show_document("airline_10", { "name" => "40-Mile Air" })
 
     screen = rendered
 
@@ -93,10 +91,25 @@ RSpec.describe Lazycouchbase::UI::MainView, :tui do
     expect(screen).not_to include("[3] Documents")
   end
 
+  it "shows a breadcrumb for the cursor position in the status bar" do
+    state.show_document("airline_10", { "geo" => { "lat" => 48.5 } })
+    state.doc.move_cursor(2)
+
+    screen = rendered(width: 140)
+
+    expect(screen).to include("beer-sample › _default._default › airline_10 › geo.lat")
+  end
+
+  it "soft-wraps long values instead of clipping them" do
+    state.show_document("airline_10", { "description" => "#{"lorem ipsum " * 20}TAIL" })
+
+    screen = rendered
+
+    expect(screen).to include("TAIL")
+  end
+
   it "preserves JSON indentation in the document view" do
-    state.document_id = "airport_1256"
-    state.document_body = "{\n  \"geo\": {\n    \"lat\": 48.596219\n  }\n}"
-    state.switch_mode(:document)
+    state.show_document("airport_1256", { "geo" => { "lat" => 48.596219 } })
 
     screen = rendered
 

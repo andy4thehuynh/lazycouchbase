@@ -4,27 +4,57 @@ require "ratatui_ruby"
 
 module Lazycouchbase
   module UI
-    # Full-pane, scrollable view of a single document's pretty-printed JSON.
+    # Full-pane view of a single document: soft-wrapped pretty JSON with a
+    # cursor line, an inline search prompt in the title, and a keys-only
+    # outline the cursor can jump through.
     class DocumentView
+      def initialize
+        @outline_pane = ListPane.new
+      end
+
       def render(tui, frame, area, state)
-        # Lets the scroll clamp stop at the last page instead of the last line.
-        state.document_view_height = [area.height - 2, 1].max
+        doc = state.doc
+        doc.view_height = [area.height - 2, 1].max
+        doc.view_width = [area.width - 2, 1].max
 
-        # ratatui_ruby's wrap always trims leading whitespace, which flattens
-        # the JSON indentation; clipping the rare over-long line is the
-        # lesser evil. Unwrapped lines also keep the scroll clamp exact.
-        paragraph = tui.paragraph(
-          text: state.document_body,
-          wrap: false,
-          scroll: [state.document_scroll, 0],
-          block: tui.block(
-            title: " Document: #{state.document_id} ",
-            borders: [:all],
-            border_style: Theme.active_border(tui)
-          )
-        )
+        if doc.outline?
+          render_outline(tui, frame, area, doc)
+        else
+          render_lines(tui, frame, area, state, doc)
+        end
+      end
 
+      private
+
+      def render_lines(tui, frame, area, state, doc)
+        visible = doc.visual_lines[doc.scroll, doc.view_height] || []
+        lines = visible.each_with_index.map do |line, offset|
+          style = doc.scroll + offset == doc.cursor ? Theme.highlight(tui) : nil
+          tui.line(spans: [tui.span(content: line.text, style: style)])
+        end
+
+        paragraph = tui.paragraph(text: lines, block: block(tui, title(state, doc)))
         frame.render_widget(paragraph, area)
+      end
+
+      def render_outline(tui, frame, area, doc)
+        props = ListPane::Props.new(
+          title: " Keys: #{doc.id} (#{doc.outline_entries.size}) ",
+          items: doc.outline_entries.map(&:text),
+          selected: doc.outline_index,
+          focused: true
+        )
+        @outline_pane.render(tui, frame, area, props)
+      end
+
+      def title(state, doc)
+        return " Document: #{doc.id} — /#{doc.search_text}█ " if state.mode == :document_search
+
+        " Document: #{doc.id} "
+      end
+
+      def block(tui, title)
+        tui.block(title: title, borders: [:all], border_style: Theme.active_border(tui))
       end
     end
   end

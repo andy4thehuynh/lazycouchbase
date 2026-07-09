@@ -4,37 +4,45 @@ module Lazycouchbase
   # Translates keyboard events into state changes and actions.
   #
   # Selection, focus, and mode changes are applied to the AppState directly;
-  # anything that needs data (loading collections, running a query, ...) is
-  # returned as an action symbol for the App to perform:
-  # :quit, :load_collections, :load_documents, :open_document, :run_query,
-  # or :refresh. Returns nil when no action is needed.
+  # anything that needs data or IO (loading collections, running a query,
+  # yanking to the clipboard, ...) is returned as an action symbol for the
+  # App to perform: :quit, :load_collections, :load_documents,
+  # :open_document, :run_query, :refresh, :yank_document, or :yank_value.
+  # Returns nil when no action is needed.
   class KeyHandler
     PANE_KEYS = { "1" => :buckets, "2" => :collections, "3" => :documents }.freeze
     RELOAD_ACTIONS = { buckets: :load_collections, collections: :load_documents }.freeze
-    SCROLL_DELTAS = {
-      "j" => 1, "down" => 1, "k" => -1, "up" => -1, "page_down" => 10, "page_up" => -10
-    }.freeze
+
+    def self.printable?(event)
+      event.code.length == 1 && (event.modifiers - ["shift"]).empty?
+    end
 
     def initialize(state)
       @state = state
+      @document_keys = DocumentKeys.new(state)
     end
 
     def call(event)
       return nil unless event.key?
       return :quit if event == :ctrl_c
 
-      case @state.mode
-      when :query then query_mode(event)
-      when :document then document_mode(event)
-      when :help then help_mode(event)
-      when :filter then filter_mode(event)
-      else normal_mode(event)
-      end
+      mode_keys(event)
     end
 
     private
 
     attr_reader :state
+
+    def mode_keys(event)
+      case @state.mode
+      when :query then query_mode(event)
+      when :document then @document_keys.document(event)
+      when :document_search then @document_keys.search(event)
+      when :help then help_mode(event)
+      when :filter then filter_mode(event)
+      else normal_mode(event)
+      end
+    end
 
     def normal_mode(event)
       case event.code
@@ -118,14 +126,10 @@ module Lazycouchbase
     end
 
     def append_query(event)
-      return nil unless printable?(event)
+      return nil unless self.class.printable?(event)
 
       state.query_text = state.query_text + event.code
       nil
-    end
-
-    def printable?(event)
-      event.code.length == 1 && (event.modifiers - ["shift"]).empty?
     end
 
     def open_filter
@@ -164,25 +168,10 @@ module Lazycouchbase
     end
 
     def append_filter(event)
-      return nil unless printable?(event)
+      return nil unless self.class.printable?(event)
 
       state.filter_text = state.filter_text + event.code
       nil
-    end
-
-    def document_mode(event)
-      case event.code
-      when "esc", "q" then state.switch_mode(:normal)
-      when "g" then state.document_scroll = 0
-      when "G" then state.document_scroll = state.document_line_count
-      else scroll_document(event)
-      end
-      nil
-    end
-
-    def scroll_document(event)
-      delta = SCROLL_DELTAS[event.code]
-      state.document_scroll += delta if delta
     end
 
     def help_mode(event)
