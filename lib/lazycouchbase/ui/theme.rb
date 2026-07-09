@@ -16,8 +16,10 @@ module Lazycouchbase
         tui.style(fg: :dark_gray)
       end
 
+      # Named ANSI colors follow the terminal palette, where "blue" can be
+      # light enough to drown white text. Reverse video reads in any palette.
       def highlight(tui)
-        tui.style(bg: :blue, fg: :white, modifiers: [:bold])
+        tui.style(modifiers: %i[reversed bold])
       end
 
       def status(tui, kind)

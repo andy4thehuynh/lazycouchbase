@@ -48,6 +48,20 @@ RSpec.describe Lazycouchbase::UI::MainView, :tui do
     expect(screen).to match(/❯ beer-sample/)
   end
 
+  it "highlights the selected row with reverse video" do
+    with_test_terminal(100, 30) do
+      RatatuiRuby.run do |tui|
+        tui.draw { |frame| view.render(tui, frame, state) }
+
+        row = buffer_content.index { |line| line.include?("❯ beer-sample") }
+        column = buffer_content[row].index("beer-sample")
+        modifiers = (get_cell(column, row).modifiers || []).map(&:to_sym)
+
+        expect(modifiers).to include(:reversed)
+      end
+    end
+  end
+
   it "renders the status bar message and hints" do
     screen = rendered
 
