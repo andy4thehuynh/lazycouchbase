@@ -74,6 +74,20 @@ class FakeClient
     @query_result
   end
 
+  def explain(statement)
+    fail_if_configured(:explain)
+    @executed_queries << "EXPLAIN #{statement}"
+    {
+      "plan" => {
+        "#operator" => "Sequence",
+        "~children" => [
+          { "#operator" => "PrimaryScan3", "keyspace" => "beer-sample" },
+          { "#operator" => "Fetch", "keyspace" => "beer-sample" }
+        ]
+      }
+    }
+  end
+
   private
 
   def documents_in(bucket_name, ref)

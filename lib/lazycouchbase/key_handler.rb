@@ -48,12 +48,17 @@ module Lazycouchbase
       case event.code
       when "q" then :quit
       when "r" then :refresh
-      when "?" then show_help
-      when ":" then open_query
+      when "?" then switch(:help)
+      when ":" then switch(:query)
       when "/" then open_filter
       when "enter" then activate
       else navigation(event)
       end
+    end
+
+    def switch(mode)
+      state.switch_mode(mode)
+      nil
     end
 
     def navigation(event)
@@ -72,11 +77,6 @@ module Lazycouchbase
       when "back_tab" then state.focus_previous
       when *PANE_KEYS.keys then state.focus(PANE_KEYS.fetch(event.code))
       end
-      nil
-    end
-
-    def show_help
-      state.switch_mode(:help)
       nil
     end
 
@@ -101,23 +101,36 @@ module Lazycouchbase
       nil
     end
 
-    def open_query
-      state.switch_mode(:query)
-      nil
-    end
-
     def close_query
+      state.query_history&.reset_position
       state.switch_mode(:normal)
       nil
     end
 
     def query_mode(event)
+      return query_action(:explain_query) if event == :ctrl_e
+
       case event.code
       when "esc" then close_query
-      when "enter" then state.query_text.strip.empty? ? nil : :run_query
+      when "enter" then query_action(:run_query)
       when "backspace" then delete_query_char
+      when "up" then recall_query(:previous)
+      when "down" then recall_query(:next)
       else append_query(event)
       end
+    end
+
+    def query_action(action)
+      state.query_text.strip.empty? ? nil : action
+    end
+
+    def recall_query(direction)
+      history = state.query_history
+      return nil unless history
+
+      replacement = direction == :previous ? history.recall_previous : history.recall_next
+      state.query_text = replacement if replacement
+      nil
     end
 
     def delete_query_char

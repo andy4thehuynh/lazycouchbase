@@ -9,7 +9,7 @@ module Lazycouchbase
     class StatusBar
       HINTS = {
         normal: "j/k: move │ enter: open │ /: filter │ :: query │ ?: help │ q: quit",
-        query: "enter: run │ esc: back",
+        query: "enter: run │ ctrl-e: explain │ ↑/↓: history │ esc: back",
         document: "j/k: move │ /: search │ t: keys │ y/Y: yank │ esc: back",
         document_search: "type to search │ enter: jump │ esc: cancel",
         help: "esc: close",

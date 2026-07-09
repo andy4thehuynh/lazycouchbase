@@ -163,6 +163,67 @@ RSpec.describe Lazycouchbase::KeyHandler do
 
       expect(state.mode).to eq(:normal)
     end
+
+    it "explains a non-blank query on ctrl-e" do
+      state.query_text = "SELECT 1"
+
+      expect(handler.call(key("e", modifiers: ["ctrl"]))).to eq(:explain_query)
+    end
+
+    it "does not explain a blank query" do
+      expect(handler.call(key("e", modifiers: ["ctrl"]))).to be_nil
+    end
+
+    context "with history" do
+      before do
+        state.query_history = Lazycouchbase::QueryHistory.new
+        state.query_history.record("SELECT 1")
+        state.query_history.record("SELECT 2")
+      end
+
+      it "recalls older queries with the up arrow" do
+        handler.call(key("up"))
+        expect(state.query_text).to eq("SELECT 2")
+
+        handler.call(key("up"))
+        expect(state.query_text).to eq("SELECT 1")
+      end
+
+      it "walks forward with the down arrow back to a blank prompt" do
+        2.times { handler.call(key("up")) }
+
+        handler.call(key("down"))
+        expect(state.query_text).to eq("SELECT 2")
+
+        handler.call(key("down"))
+        expect(state.query_text).to eq("")
+      end
+
+      it "discards edits when recalling further" do
+        handler.call(key("up"))
+        handler.call(key("x"))
+
+        handler.call(key("up"))
+
+        expect(state.query_text).to eq("SELECT 1")
+      end
+
+      it "resets the recall position when leaving the editor" do
+        handler.call(key("up"))
+        handler.call(key("esc"))
+
+        state.switch_mode(:query)
+        handler.call(key("up"))
+
+        expect(state.query_text).to eq("SELECT 2")
+      end
+    end
+
+    it "ignores the arrows without history" do
+      handler.call(key("up"))
+
+      expect(state.query_text).to eq("")
+    end
   end
 
   describe "filter mode" do

@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Query history: `↑`/`↓` in the query editor recall the last 30 executed
+  queries, persisted across sessions in the XDG data directory.
+- `ctrl-e` explains the current query: a plain-English plan summary (index
+  usage, scans, joins, sorts) with the raw EXPLAIN plan in the document view.
 - `/` fuzzy filter for the buckets, collections, and documents panes: type to
   narrow with case-insensitive subsequence matching, `↑`/`↓` to move the
   highlight, `enter` to select, `esc` to cancel.

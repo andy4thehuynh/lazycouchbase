@@ -14,7 +14,7 @@ module Lazycouchbase
     attr_reader :mode, :focused_pane, :buckets, :collections, :documents,
                 :bucket_index, :collection_index, :document_index,
                 :query_text, :filter_text, :filter_index, :doc
-    attr_accessor :query_rows, :query_status,
+    attr_accessor :query_rows, :query_status, :query_history,
                   :status_message, :status_kind, :connection_label
 
     def initialize

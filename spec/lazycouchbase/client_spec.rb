@@ -141,6 +141,24 @@ RSpec.describe Lazycouchbase::Client do
     end
   end
 
+  describe "#explain" do
+    it "prefixes EXPLAIN and returns the first row" do
+      result = instance_double(Couchbase::Cluster::QueryResult, rows: [{ "plan" => { "#operator" => "Sequence" } }])
+      allow(cluster).to receive(:query).with("EXPLAIN SELECT 1").and_return(result)
+
+      expect(client.explain("SELECT 1")).to eq({ "plan" => { "#operator" => "Sequence" } })
+    end
+
+    it "does not double-prefix an EXPLAIN query" do
+      result = instance_double(Couchbase::Cluster::QueryResult, rows: [{}])
+      allow(cluster).to receive(:query).with("EXPLAIN SELECT 1").and_return(result)
+
+      client.explain("explain SELECT 1")
+
+      expect(cluster).to have_received(:query).with("EXPLAIN SELECT 1")
+    end
+  end
+
   describe "#query" do
     it "returns rows with a success status and elapsed time" do
       sdk_result = instance_double(Couchbase::Cluster::QueryResult, rows: [{ "count" => 3 }])

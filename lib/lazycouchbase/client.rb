@@ -77,6 +77,15 @@ module Lazycouchbase
       end
     end
 
+    # Returns the raw plan document for a statement (any leading EXPLAIN is
+    # stripped first so recalled EXPLAIN queries are not double-prefixed).
+    def explain(statement)
+      bare = statement.strip.sub(/\Aexplain\s+/i, "")
+      wrap_errors("explaining query") do
+        cluster.query("EXPLAIN #{bare}").rows.to_a.first || {}
+      end
+    end
+
     def query(statement)
       wrap_errors("running query") do
         started = Process.clock_gettime(Process::CLOCK_MONOTONIC)

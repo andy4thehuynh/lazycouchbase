@@ -10,17 +10,19 @@ module Lazycouchbase
   class App
     POLL_TIMEOUT = 0.05
     ACTIONS = %i[
-      load_collections load_documents open_document run_query refresh
-      yank_document yank_value
+      load_collections load_documents open_document run_query explain_query
+      refresh yank_document yank_value
     ].freeze
 
     attr_reader :state
 
-    def initialize(client:, config:, state: AppState.new, view: UI::MainView.new)
+    def initialize(client:, config:, state: AppState.new, view: UI::MainView.new, history: nil)
       @client = client
       @config = config
       @state = state
       @view = view
+      @history = history || QueryHistory.new(QueryHistory.default_path)
+      @state.query_history = @history
       @key_handler = KeyHandler.new(state)
     end
 
@@ -126,11 +128,24 @@ module Lazycouchbase
     end
 
     def run_query
+      @history.record(@state.query_text)
       guard do
         result = @client.query(@state.query_text)
         @state.query_rows = result.rows.map { |row| flat(row) }
         @state.query_status = "#{result.status} in #{result.elapsed_ms}ms"
         @state.info("Query returned #{result.rows.size} rows in #{result.elapsed_ms}ms")
+      end
+    end
+
+    # The plan opens in the document view: translated summary up top, raw
+    # plan below, with search/yank/breadcrumb for free.
+    def explain_query
+      @history.record(@state.query_text)
+      guard do
+        row = @client.explain(@state.query_text)
+        plan = row["plan"] || row
+        @state.show_document("EXPLAIN", { "summary" => ExplainSummary.new(plan).lines, "plan" => plan })
+        @state.info("esc returns to the browser; : reopens the query")
       end
     end
 

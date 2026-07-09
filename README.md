@@ -65,7 +65,10 @@ lazycouchbase --help
 | `q` / `ctrl-c`      | Quit                                          |
 
 In the query editor, type a N1QL statement and press `enter` to run it; results are shown
-below the input.
+below the input. `↑`/`↓` recall the last 30 executed queries (persisted in
+`$XDG_DATA_HOME/lazycouchbase/history.jsonl`), and `ctrl-e` runs `EXPLAIN` on the current
+statement — a plain-English summary of the plan (index usage, scans, joins, sorts) opens
+in the document view with the raw plan below it.
 
 In the document view, `j`/`k` and `page up`/`page down` move a cursor line, and the status
 bar shows a breadcrumb of where that cursor is (`bucket › collection › id › path`). Long

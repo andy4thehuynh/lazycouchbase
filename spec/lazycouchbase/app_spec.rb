@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 RSpec.describe Lazycouchbase::App, :tui do
-  subject(:app) { described_class.new(client: client, config: config) }
+  subject(:app) { described_class.new(client: client, config: config, history: history) }
+
+  let(:history) { Lazycouchbase::QueryHistory.new }
 
   let(:client) do
     FakeClient.new(
@@ -108,6 +110,22 @@ RSpec.describe Lazycouchbase::App, :tui do
     expect(client.executed_queries).to eq(["SELECT 1"])
     expect(app.state.query_rows).to eq(['{"greeting":"hello"}'])
     expect(app.state.status_message).to include("1 rows in 5ms")
+  end
+
+  it "records executed queries and recalls them with the up arrow" do
+    run_app(":", *"SELECT 1".chars, "enter", :up, "enter", :ctrl_c)
+
+    expect(history.entries).to eq(["SELECT 1"])
+    expect(client.executed_queries).to eq(["SELECT 1", "SELECT 1"])
+  end
+
+  it "explains the query into the document view" do
+    run_app(":", *"SELECT 1".chars, :ctrl_e, :ctrl_c)
+
+    expect(app.state.mode).to eq(:document)
+    expect(app.state.doc.id).to eq("EXPLAIN")
+    expect(app.state.doc.body).to include("Primary scan on beer-sample")
+    expect(app.state.doc.body).to include("\"#operator\": \"PrimaryScan3\"")
   end
 
   it "preselects the configured bucket at startup" do
