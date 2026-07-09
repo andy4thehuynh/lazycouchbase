@@ -15,6 +15,7 @@ module Lazycouchbase
         ["  enter", "drill in / open document"],
         ["", ""],
         ["Actions", ""],
+        ["  /", "fuzzy filter the focused pane"],
         ["  :", "open the N1QL query editor"],
         ["  r", "refresh the focused pane"],
         ["  esc", "back"],

@@ -70,6 +70,21 @@ RSpec.describe Lazycouchbase::App, :tui do
     expect(app.state.mode).to eq(:normal)
   end
 
+  it "fuzzy filters buckets and loads the committed selection" do
+    run_app("/", "t", "enter", "q")
+
+    expect(app.state.selected_bucket).to eq("travel-sample")
+    expect(app.state.collections.map(&:to_s)).to eq(%w[inventory.airline])
+    expect(app.state.documents).to eq(%w[airline_10])
+  end
+
+  it "opens a document found through the fuzzy filter" do
+    run_app("3", "/", "s", "enter", "enter", :ctrl_c)
+
+    expect(app.state.mode).to eq(:document)
+    expect(app.state.document_id).to eq("stout-1")
+  end
+
   it "runs a query typed into the query editor" do
     run_app(":", *"SELECT 1".chars, "enter", :ctrl_c)
 

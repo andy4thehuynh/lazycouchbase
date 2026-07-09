@@ -57,6 +57,7 @@ lazycouchbase --help
 | `j` / `k`, arrows   | Move selection (loads the panes to the right) |
 | `g` / `G`           | Jump to first / last entry                    |
 | `enter`             | Drill in; open the selected document          |
+| `/`                 | Fuzzy filter the focused pane                 |
 | `:`                 | Open the N1QL query editor                    |
 | `r`                 | Refresh the focused pane                      |
 | `esc`               | Back                                          |
@@ -65,6 +66,11 @@ lazycouchbase --help
 
 In the query editor, type a N1QL statement and press `enter` to run it; results are shown
 below the input. In the document view, `j`/`k` and `page up`/`page down` scroll.
+
+The `/` filter is a transient fuzzy picker in the style of fzf: type to narrow the focused
+pane (case-insensitive subsequence match, so `ta2` finds `tenant_agent_02.users`), move the
+highlight with `↑`/`↓`, then press `enter` to jump to that entry — or `esc` to leave the
+pane exactly as it was.
 
 ### Configuration
 

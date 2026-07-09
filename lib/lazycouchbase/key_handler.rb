@@ -27,6 +27,7 @@ module Lazycouchbase
       when :query then query_mode(event)
       when :document then document_mode(event)
       when :help then help_mode(event)
+      when :filter then filter_mode(event)
       else normal_mode(event)
       end
     end
@@ -41,6 +42,7 @@ module Lazycouchbase
       when "r" then :refresh
       when "?" then show_help
       when ":" then open_query
+      when "/" then open_filter
       when "enter" then activate
       else navigation(event)
       end
@@ -124,6 +126,48 @@ module Lazycouchbase
 
     def printable?(event)
       event.code.length == 1 && (event.modifiers - ["shift"]).empty?
+    end
+
+    def open_filter
+      state.start_filter
+      nil
+    end
+
+    def filter_mode(event)
+      case event.code
+      when "esc" then close_filter
+      when "enter" then commit_filter
+      when "backspace" then delete_filter_char
+      when "up" then move_filter(-1)
+      when "down" then move_filter(1)
+      else append_filter(event)
+      end
+    end
+
+    def close_filter
+      state.cancel_filter
+      nil
+    end
+
+    def commit_filter
+      state.commit_filter ? RELOAD_ACTIONS[state.focused_pane] : nil
+    end
+
+    def delete_filter_char
+      state.filter_text = state.filter_text[0...-1]
+      nil
+    end
+
+    def move_filter(delta)
+      state.move_filter_selection(delta)
+      nil
+    end
+
+    def append_filter(event)
+      return nil unless printable?(event)
+
+      state.filter_text = state.filter_text + event.code
+      nil
     end
 
     def document_mode(event)

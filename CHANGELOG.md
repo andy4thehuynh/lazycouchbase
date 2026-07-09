@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `/` fuzzy filter for the buckets, collections, and documents panes: type to
+  narrow with case-insensitive subsequence matching, `↑`/`↓` to move the
+  highlight, `enter` to select, `esc` to cancel.
+
+### Fixed
+
+- Document view preserves the JSON indentation instead of flattening it.
+- Selection highlight uses reverse video so it stays readable in any terminal
+  palette.
+- Document lists no longer crash the documents pane (the Couchbase SDK returns
+  lazy enumerators for query rows).
+
 ## [0.1.0] - 2026-07-08
 
 ### Added

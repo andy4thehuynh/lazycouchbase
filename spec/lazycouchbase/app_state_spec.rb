@@ -111,6 +111,96 @@ RSpec.describe Lazycouchbase::AppState do
     end
   end
 
+  describe "filtering" do
+    before { state.buckets = %w[beer-sample gamesim-sample travel-sample] }
+
+    it "starts with an empty query matching everything" do
+      state.start_filter
+
+      expect(state.mode).to eq(:filter)
+      expect(state.filter_text).to eq("")
+      expect(state.filter_matches).to eq(%w[beer-sample gamesim-sample travel-sample])
+    end
+
+    it "narrows matches to the focused pane's list" do
+      state.start_filter
+      state.filter_text = "g"
+
+      expect(state.filter_matches).to eq(%w[gamesim-sample])
+    end
+
+    it "resets the highlight when the query changes" do
+      state.start_filter
+      state.move_filter_selection(2)
+
+      state.filter_text = "sample"
+
+      expect(state.filter_index).to eq(0)
+    end
+
+    it "clamps the highlight within the matches" do
+      state.start_filter
+      state.filter_text = "sample"
+
+      state.move_filter_selection(10)
+      expect(state.filter_index).to eq(2)
+
+      state.move_filter_selection(-10)
+      expect(state.filter_index).to eq(0)
+    end
+
+    it "commits the highlighted match as the pane selection" do
+      state.start_filter
+      state.filter_text = "g"
+
+      expect(state.commit_filter).to be(true)
+      expect(state.mode).to eq(:normal)
+      expect(state.selected_bucket).to eq("gamesim-sample")
+      expect(state.filter_text).to eq("")
+    end
+
+    it "reports no change when committing the current selection" do
+      state.start_filter
+      state.filter_text = "beer"
+
+      expect(state.commit_filter).to be(false)
+      expect(state.selected_bucket).to eq("beer-sample")
+    end
+
+    it "degrades commit to a cancel when nothing matches" do
+      state.move_selection(1)
+      state.start_filter
+      state.filter_text = "zzz"
+
+      expect(state.commit_filter).to be(false)
+      expect(state.mode).to eq(:normal)
+      expect(state.selected_bucket).to eq("gamesim-sample")
+    end
+
+    it "cancels without touching the selection" do
+      state.move_selection(2)
+      state.start_filter
+      state.filter_text = "beer"
+
+      state.cancel_filter
+
+      expect(state.mode).to eq(:normal)
+      expect(state.selected_bucket).to eq("travel-sample")
+      expect(state.filter_text).to eq("")
+    end
+
+    it "filters the focused pane only" do
+      state.collections = %w[inventory.airline inventory.route]
+      state.focus(:collections)
+      state.start_filter
+      state.filter_text = "route"
+
+      expect(state.commit_filter).to be(true)
+      expect(state.selected_collection).to eq("inventory.route")
+      expect(state.bucket_index).to eq(0)
+    end
+  end
+
   describe "#select_edge" do
     before { state.buckets = %w[alpha beta gamma] }
 

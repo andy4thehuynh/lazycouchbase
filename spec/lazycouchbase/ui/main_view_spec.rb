@@ -62,6 +62,17 @@ RSpec.describe Lazycouchbase::UI::MainView, :tui do
     end
   end
 
+  it "renders the filter query and match count while filtering" do
+    state.start_filter
+    state.filter_text = "t"
+
+    screen = rendered
+
+    expect(screen).to include("[1] Buckets (1/2) /t█")
+    expect(screen).to include("travel-sample")
+    expect(screen).not_to include("beer-sample")
+  end
+
   it "renders the status bar message and hints" do
     screen = rendered
 

@@ -9,11 +9,12 @@ module Lazycouchbase
   # unit-testable.
   class AppState
     PANES = %i[buckets collections documents].freeze
-    MODES = %i[normal query document help].freeze
+    MODES = %i[normal query document help filter].freeze
 
     attr_reader :mode, :focused_pane, :buckets, :collections, :documents,
                 :bucket_index, :collection_index, :document_index,
-                :query_text, :document_scroll, :document_body, :document_line_count
+                :query_text, :document_scroll, :document_body, :document_line_count,
+                :filter_text, :filter_index
     attr_accessor :document_id, :query_rows, :query_status,
                   :status_message, :status_kind, :connection_label,
                   :document_view_height
@@ -33,6 +34,8 @@ module Lazycouchbase
       @document_view_height = 0
       @query_text = ""
       @query_rows = []
+      @filter_text = ""
+      @filter_index = 0
       @status_message = ""
       @status_kind = :info
       @connection_label = ""
@@ -118,6 +121,49 @@ module Lazycouchbase
 
     def query_text=(value)
       @query_text = value || ""
+    end
+
+    # The filter is a transient, fzf-style picker over the focused pane: it
+    # only exists while filter mode is open. Committing selects the
+    # highlighted match in the underlying list; cancelling leaves the pane
+    # exactly as it was.
+    def start_filter
+      switch_mode(:filter)
+      @filter_text = ""
+      @filter_index = 0
+    end
+
+    def filter_text=(value)
+      @filter_text = value || ""
+      @filter_index = 0
+    end
+
+    def filter_matches
+      focused_list.select { |item| Fuzzy.match?(@filter_text, item.to_s) }
+    end
+
+    def move_filter_selection(delta)
+      @filter_index = (@filter_index + delta).clamp(0, [filter_matches.size - 1, 0].max)
+    end
+
+    # Returns true when the pane's selection actually moved, so the caller
+    # knows whether dependent panes need reloading. With no match to choose,
+    # committing degrades to a cancel.
+    def commit_filter
+      chosen = filter_matches[@filter_index]
+      cancel_filter
+      return false unless chosen
+
+      target = focused_list.index(chosen)
+      changed = target != focused_index
+      self.focused_index = target
+      changed
+    end
+
+    def cancel_filter
+      switch_mode(:normal)
+      @filter_text = ""
+      @filter_index = 0
     end
 
     def info(message)

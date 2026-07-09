@@ -71,11 +71,27 @@ module Lazycouchbase
       end
 
       def props(state, pane, items, selected)
+        return filter_props(state, pane, items) if filtering?(state, pane)
+
         ListPane::Props.new(
           title: " #{PANE_LABELS.fetch(pane)} (#{items.size}) ",
           items: items,
           selected: selected,
           focused: state.focused_pane == pane
+        )
+      end
+
+      def filtering?(state, pane)
+        state.mode == :filter && state.focused_pane == pane
+      end
+
+      def filter_props(state, pane, items)
+        matches = state.filter_matches
+        ListPane::Props.new(
+          title: " #{PANE_LABELS.fetch(pane)} (#{matches.size}/#{items.size}) /#{state.filter_text}█ ",
+          items: matches,
+          selected: state.filter_index,
+          focused: true
         )
       end
     end

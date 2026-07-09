@@ -8,10 +8,11 @@ module Lazycouchbase
     # and the connection label on the right.
     class StatusBar
       HINTS = {
-        normal: "j/k: move │ enter: open │ :: query │ ?: help │ q: quit",
+        normal: "j/k: move │ enter: open │ /: filter │ :: query │ ?: help │ q: quit",
         query: "enter: run │ esc: back",
         document: "j/k: scroll │ esc: back",
-        help: "esc: close"
+        help: "esc: close",
+        filter: "type to narrow │ ↑/↓: move │ enter: select │ esc: cancel"
       }.freeze
 
       def render(tui, frame, area, state)

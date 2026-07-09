@@ -165,6 +165,84 @@ RSpec.describe Lazycouchbase::KeyHandler do
     end
   end
 
+  describe "filter mode" do
+    it "opens the filter for the focused pane on /" do
+      handler.call(key("/"))
+
+      expect(state.mode).to eq(:filter)
+      expect(state.filter_text).to eq("")
+    end
+
+    it "treats printable keys as query text, including q" do
+      handler.call(key("/"))
+      "qt".chars.each { |char| handler.call(key(char)) }
+
+      expect(state.mode).to eq(:filter)
+      expect(state.filter_text).to eq("qt")
+    end
+
+    it "ignores ctrl chords and navigation keys" do
+      handler.call(key("/"))
+      handler.call(key("a", modifiers: ["ctrl"]))
+      handler.call(key("tab"))
+
+      expect(state.filter_text).to eq("")
+    end
+
+    it "deletes with backspace" do
+      handler.call(key("/"))
+      handler.call(key("g"))
+
+      handler.call(key("backspace"))
+
+      expect(state.filter_text).to eq("")
+    end
+
+    it "moves the highlight with the arrow keys" do
+      handler.call(key("/"))
+
+      handler.call(key("down"))
+      expect(state.filter_index).to eq(1)
+
+      handler.call(key("up"))
+      expect(state.filter_index).to eq(0)
+    end
+
+    it "cancels on esc without moving the selection" do
+      handler.call(key("/"))
+      handler.call(key("t"))
+
+      expect(handler.call(key("esc"))).to be_nil
+      expect(state.mode).to eq(:normal)
+      expect(state.selected_bucket).to eq("beer-sample")
+    end
+
+    it "commits a new bucket on enter and reloads collections" do
+      handler.call(key("/"))
+      handler.call(key("t"))
+
+      expect(handler.call(key("enter"))).to eq(:load_collections)
+      expect(state.mode).to eq(:normal)
+      expect(state.selected_bucket).to eq("travel-sample")
+    end
+
+    it "returns no action when the selection does not change" do
+      handler.call(key("/"))
+
+      expect(handler.call(key("enter"))).to be_nil
+      expect(state.selected_bucket).to eq("beer-sample")
+    end
+
+    it "commits documents without a reload action" do
+      state.focus(:documents)
+      handler.call(key("/"))
+      handler.call(key("2"))
+
+      expect(handler.call(key("enter"))).to be_nil
+      expect(state.selected_document).to eq("doc-2")
+    end
+  end
+
   describe "document mode" do
     before do
       state.switch_mode(:document)
