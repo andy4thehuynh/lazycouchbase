@@ -68,6 +68,17 @@ RSpec.describe Lazycouchbase::UI::MainView, :tui do
     expect(screen).not_to include("[3] Documents")
   end
 
+  it "preserves JSON indentation in the document view" do
+    state.document_id = "airport_1256"
+    state.document_body = "{\n  \"geo\": {\n    \"lat\": 48.596219\n  }\n}"
+    state.switch_mode(:document)
+
+    screen = rendered
+
+    expect(screen).to include('  "geo": {')
+    expect(screen).to include('    "lat": 48.596219')
+  end
+
   it "renders the query editor and results in query mode" do
     state.switch_mode(:query)
     state.query_text = "SELECT 1"
