@@ -107,6 +107,16 @@ RSpec.describe Lazycouchbase::Client do
       expect(ids).to eq(%w[doc-1 doc-2])
     end
 
+    it "materializes the SDK's lazy rows into an Array" do
+      result = instance_double(Couchbase::Cluster::QueryResult, rows: %w[doc-1 doc-2].lazy)
+      allow(cluster).to receive(:query).and_return(result)
+
+      ids = client.document_ids("travel-sample", collection_ref("inventory", "airline"))
+
+      expect(ids).to be_an(Array)
+      expect(ids).to eq(%w[doc-1 doc-2])
+    end
+
     it "wraps query failures in Client::Error" do
       allow(cluster).to receive(:query).and_raise(StandardError, "no primary index")
 
@@ -141,6 +151,16 @@ RSpec.describe Lazycouchbase::Client do
       expect(result.rows).to eq([{ "count" => 3 }])
       expect(result.status).to eq("success")
       expect(result.elapsed_ms).to be_a(Integer)
+    end
+
+    it "materializes the SDK's lazy rows into an Array" do
+      sdk_result = instance_double(Couchbase::Cluster::QueryResult, rows: [{ "count" => 3 }].lazy)
+      allow(cluster).to receive(:query).with("SELECT 1").and_return(sdk_result)
+
+      result = client.query("SELECT 1")
+
+      expect(result.rows).to be_an(Array)
+      expect(result.rows).to eq([{ "count" => 3 }])
     end
 
     it "wraps syntax errors in Client::Error" do

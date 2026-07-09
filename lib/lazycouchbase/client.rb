@@ -66,7 +66,8 @@ module Lazycouchbase
     def document_ids(bucket_name, ref, limit: 50)
       statement = "SELECT RAW META(doc).id FROM #{keyspace(bucket_name, ref)} AS doc LIMIT #{Integer(limit)}"
       wrap_errors("listing documents in #{bucket_name}.#{ref}") do
-        cluster.query(statement).rows
+        # The SDK's rows is an Enumerator::Lazy; the UI needs a real Array.
+        cluster.query(statement).rows.to_a
       end
     end
 
@@ -81,7 +82,7 @@ module Lazycouchbase
         started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
         result = cluster.query(statement)
         elapsed_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000).round
-        QueryResult.new(rows: result.rows, status: "success", elapsed_ms: elapsed_ms)
+        QueryResult.new(rows: result.rows.to_a, status: "success", elapsed_ms: elapsed_ms)
       end
     end
 
