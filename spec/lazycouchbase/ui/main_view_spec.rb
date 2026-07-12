@@ -131,6 +131,18 @@ RSpec.describe Lazycouchbase::UI::MainView, :tui do
     expect(screen).to include('{"answer":42}')
   end
 
+  it "renders the snippet picker and preview in snippet mode" do
+    library = Lazycouchbase::SnippetLibrary.new
+    state.snippets = Lazycouchbase::SnippetPicker.new(library.snippets)
+    state.switch_mode(:snippet)
+
+    screen = rendered(width: 140)
+
+    expect(screen).to include("Snippets (#{library.snippets.size}/#{library.snippets.size}) /█")
+    expect(screen).to include("Basics › Select fields")
+    expect(screen).to include("docs: https://")
+  end
+
   it "renders the help screen in help mode" do
     state.switch_mode(:help)
 

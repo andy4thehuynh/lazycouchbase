@@ -1,0 +1,195 @@
+# SQL++ snippet library for the query editor's snippet picker (tab).
+#
+# Each snippet needs: name, category, template, description, docs.
+# Templates are single-line (the editor is one line) and may use the
+# %{keyspace} placeholder, which is filled from the sidebar selection.
+# Docs links point at the Couchbase Server SQL++ reference.
+
+[[snippets]]
+name = "Select fields"
+category = "Basics"
+template = 'SELECT name, country FROM %{keyspace} LIMIT 10'
+description = "Project just the fields you need instead of * — the fastest way to learn a collection's shape."
+docs = 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/selectclause.html'
+
+[[snippets]]
+name = "Document key with META()"
+category = "Basics"
+template = 'SELECT META().id, name FROM %{keyspace} LIMIT 10'
+description = "The document key lives outside the JSON body — META().id brings it into the result."
+docs = 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/metafun.html'
+
+[[snippets]]
+name = "Fetch by key (USE KEYS)"
+category = "Basics"
+template = 'SELECT * FROM %{keyspace} USE KEYS "airline_10"'
+description = "A key-value fetch through SQL++ — no index needed, the fastest lookup Couchbase has."
+docs = 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/hints.html'
+
+[[snippets]]
+name = "Distinct values"
+category = "Basics"
+template = 'SELECT DISTINCT country FROM %{keyspace}'
+description = "Deduplicate the projection — handy for discovering what values a field actually holds."
+docs = 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/selectclause.html'
+
+[[snippets]]
+name = "Order, limit, offset"
+category = "Basics"
+template = 'SELECT name FROM %{keyspace} ORDER BY name ASC LIMIT 10 OFFSET 10'
+description = "Sort and page through results — OFFSET skips rows, LIMIT caps the page size."
+docs = 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/orderby.html'
+
+[[snippets]]
+name = "Pattern match with LIKE"
+category = "Filtering"
+template = 'SELECT name FROM %{keyspace} WHERE name LIKE "%Air%"'
+description = "SQL-style wildcards: % matches any run of characters, _ matches exactly one."
+docs = 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/comparisonops.html'
+
+[[snippets]]
+name = "Range with BETWEEN"
+category = "Filtering"
+template = 'SELECT airportname, geo.alt FROM %{keyspace} WHERE geo.alt BETWEEN 1000 AND 2000 LIMIT 10'
+description = "Inclusive range filter — try it on inventory.airport, which has numeric geo.alt values."
+docs = 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/comparisonops.html'
+
+[[snippets]]
+name = "Membership with IN"
+category = "Filtering"
+template = 'SELECT name, country FROM %{keyspace} WHERE country IN ["France", "United Kingdom"] LIMIT 10'
+description = "Match against a list of values — the list is a real JSON array, brackets and all."
+docs = 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/comparisonops.html'
+
+[[snippets]]
+name = "MISSING vs NULL"
+category = "Filtering"
+template = 'SELECT name, callsign FROM %{keyspace} WHERE callsign IS NULL LIMIT 10'
+description = "NULL is present-but-empty; an absent field is MISSING — the biggest departure from SQL. Swap IS NULL for IS MISSING and compare."
+docs = 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/comparisonops.html'
+
+[[snippets]]
+name = "Default with IFMISSINGORNULL"
+category = "Filtering"
+template = 'SELECT name, IFMISSINGORNULL(callsign, "n/a") AS callsign FROM %{keyspace} LIMIT 10'
+description = "Substitute a fallback when a field is absent or null — IFMISSING and IFNULL exist too, each catching just one case."
+docs = 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/conditionalops.html'
+
+[[snippets]]
+name = "Group and count"
+category = "Aggregation"
+template = 'SELECT country, COUNT(*) AS total FROM %{keyspace} GROUP BY country ORDER BY total DESC'
+description = "The classic rollup — one row per country with how many documents fall into each."
+docs = 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/groupby.html'
+
+[[snippets]]
+name = "Filter groups with HAVING"
+category = "Aggregation"
+template = 'SELECT country, COUNT(*) AS total FROM %{keyspace} GROUP BY country HAVING COUNT(*) > 5 ORDER BY total DESC'
+description = "WHERE filters rows before grouping; HAVING filters the groups after aggregation."
+docs = 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/groupby.html'
+
+[[snippets]]
+name = "Name an aggregate with LETTING"
+category = "Aggregation"
+template = 'SELECT country, total FROM %{keyspace} GROUP BY country LETTING total = COUNT(*) ORDER BY total DESC'
+description = "LETTING binds a name to an aggregate after grouping so you can reuse it without repeating."
+docs = 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/groupby.html'
+
+[[snippets]]
+name = "Min, max, average"
+category = "Aggregation"
+template = 'SELECT MIN(geo.alt) AS lowest, MAX(geo.alt) AS highest, ROUND(AVG(geo.alt)) AS average FROM %{keyspace}'
+description = "Summary statistics in one pass — try it on inventory.airport for altitude numbers."
+docs = 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/aggregatefun.html'
+
+[[snippets]]
+name = "Flatten with UNNEST"
+category = "Arrays"
+template = 'SELECT r.airline, s.day, s.flight FROM %{keyspace} r UNNEST r.schedule s LIMIT 10'
+description = "Turn each array element into its own row — try it on inventory.route and its schedule array."
+docs = 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/unnest.html'
+
+[[snippets]]
+name = "Match inside arrays (ANY)"
+category = "Arrays"
+template = 'SELECT name FROM %{keyspace} WHERE ANY r IN reviews SATISFIES r.ratings.Overall = 5 END LIMIT 10'
+description = "Filter parents by their children: hotels where at least one review scored a perfect 5."
+docs = 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/collectionops.html'
+
+[[snippets]]
+name = "Transform with ARRAY"
+category = "Arrays"
+template = 'SELECT ARRAY s.flight FOR s IN schedule WHEN s.day = 1 END AS monday_flights FROM %{keyspace} LIMIT 5'
+description = "An array comprehension: map and filter an array in place without unnesting it."
+docs = 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/collectionops.html'
+
+[[snippets]]
+name = "Join on document keys"
+category = "Joins"
+template = 'SELECT r.airline, a.name, r.sourceairport, r.destinationairport FROM %{keyspace} r JOIN `travel-sample`.inventory.airline a ON KEYS r.airlineid LIMIT 10'
+description = "The lookup join: the left side stores the right side's document key, so no index is needed."
+docs = 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/join.html'
+
+[[snippets]]
+name = "ANSI join on a field"
+category = "Joins"
+template = 'SELECT h.name AS hotel, l.name AS landmark FROM %{keyspace} h JOIN `travel-sample`.inventory.landmark l ON h.city = l.city LIMIT 10'
+description = "Standard SQL joins on any condition — run it from inventory.hotel; the right side needs an index."
+docs = 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/join.html'
+
+[[snippets]]
+name = "LEFT join keeps the left side"
+category = "Joins"
+template = 'SELECT r.airline, a.name FROM %{keyspace} r LEFT JOIN `travel-sample`.inventory.airline a ON KEYS r.airlineid LIMIT 10'
+description = "Rows survive even when the join finds no match — the right side comes back MISSING."
+docs = 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/join.html'
+
+[[snippets]]
+name = "Filter by subquery"
+category = "Subqueries"
+template = 'SELECT h.name, h.city FROM %{keyspace} h WHERE h.city IN (SELECT RAW l.city FROM `travel-sample`.inventory.landmark l WHERE l.activity = "eat") LIMIT 10'
+description = "SELECT RAW strips the wrapper object so the subquery returns a plain list IN can use."
+docs = 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/subqueries.html'
+
+[[snippets]]
+name = "Create a secondary index"
+category = "Indexes & performance"
+template = 'CREATE INDEX idx_country ON %{keyspace}(country)'
+description = "Run ctrl-e on a country query before and after — watch the plan flip from primary scan to index scan."
+docs = 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/createindex.html'
+
+[[snippets]]
+name = "Create a primary index"
+category = "Indexes & performance"
+template = 'CREATE PRIMARY INDEX ON %{keyspace}'
+description = "A primary index scans everything — fine for learning, an anti-pattern in production."
+docs = 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/createprimaryindex.html'
+
+[[snippets]]
+name = "Ask the index advisor"
+category = "Indexes & performance"
+template = 'ADVISE SELECT name FROM %{keyspace} WHERE country = "France"'
+description = "Prefix any SELECT with ADVISE and the optimizer recommends the index it wishes it had."
+docs = 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/advise.html'
+
+[[snippets]]
+name = "List all indexes"
+category = "Indexes & performance"
+template = 'SELECT name, keyspace_id, index_key, state FROM system:indexes ORDER BY keyspace_id'
+description = "The system catalog is queryable too — every index in the cluster, one row each."
+docs = 'https://docs.couchbase.com/server/current/n1ql/n1ql-intro/sysinfo.html'
+
+[[snippets]]
+name = "String functions"
+category = "Functions"
+template = 'SELECT name, UPPER(name) AS shouty FROM %{keyspace} WHERE CONTAINS(LOWER(name), "air") LIMIT 10'
+description = "UPPER, LOWER, CONTAINS, SPLIT and friends — most SQL string functions carry straight over."
+docs = 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/stringfun.html'
+
+[[snippets]]
+name = "Date functions"
+category = "Functions"
+template = 'SELECT NOW_STR() AS now, DATE_ADD_STR(NOW_STR(), 30, "day") AS in_thirty_days'
+description = "Dates are strings in JSON — the _STR family parses, shifts, and formats them. No FROM needed."
+docs = 'https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/datefun.html'

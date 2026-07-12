@@ -11,7 +11,7 @@ module Lazycouchbase
     POLL_TIMEOUT = 0.05
     ACTIONS = %i[
       load_collections load_documents open_document run_query explain_query
-      refresh yank_document yank_value
+      refresh yank_document yank_value open_docs
     ].freeze
 
     attr_reader :state
@@ -23,6 +23,8 @@ module Lazycouchbase
       @view = view
       @history = history || QueryHistory.new(QueryHistory.default_path)
       @state.query_history = @history
+      library = SnippetLibrary.new
+      @state.snippets = SnippetPicker.new(library.snippets, warnings: library.warnings)
       @key_handler = KeyHandler.new(state)
     end
 
@@ -124,6 +126,22 @@ module Lazycouchbase
         @state.info("Copied #{label}")
       else
         @state.error("No clipboard tool found (wl-copy, xclip, xsel, or pbcopy)")
+      end
+    end
+
+    # Detached browser first, clipboard second, status bar as a last resort:
+    # the URL should always end up somewhere the user can reach it.
+    def open_docs
+      snippet = @state.snippets.selected
+      return unless snippet
+
+      url = snippet.docs
+      if Browser.open(url)
+        @state.info("Opened #{url}")
+      elsif Clipboard.copy(url)
+        @state.info("No browser opener — copied #{url}")
+      else
+        @state.error("Docs: #{url}")
       end
     end
 

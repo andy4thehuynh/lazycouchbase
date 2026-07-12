@@ -9,12 +9,12 @@ module Lazycouchbase
   # unit-testable.
   class AppState
     PANES = %i[buckets collections documents].freeze
-    MODES = %i[normal query document document_search help filter].freeze
+    MODES = %i[normal query document document_search help filter snippet].freeze
 
     attr_reader :mode, :focused_pane, :buckets, :collections, :documents,
                 :bucket_index, :collection_index, :document_index,
                 :query_text, :filter_text, :filter_index, :doc
-    attr_accessor :query_rows, :query_status, :query_history,
+    attr_accessor :query_rows, :query_status, :query_history, :snippets,
                   :status_message, :status_kind, :connection_label
 
     def initialize
@@ -29,6 +29,7 @@ module Lazycouchbase
       @doc = DocumentState.new
       @query_text = ""
       @query_rows = []
+      @snippets = SnippetPicker.new([])
       @filter_text = ""
       @filter_index = 0
       @status_message = ""
@@ -83,6 +84,15 @@ module Lazycouchbase
 
     def selected_document
       @documents[@document_index]
+    end
+
+    # The sidebar selection as a fully qualified, backtick-quoted
+    # `bucket`.`scope`.`collection`, or nil when nothing is selected.
+    def keyspace
+      return nil unless selected_bucket && selected_collection
+
+      parts = [selected_bucket, *selected_collection.to_s.split(".")]
+      parts.map { |part| "`#{part}`" }.join(".")
     end
 
     # Returns the new index, or nil when the name is unknown.

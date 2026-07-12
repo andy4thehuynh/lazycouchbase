@@ -24,6 +24,7 @@ module Lazycouchbase
         ["  enter", "run the query"],
         ["  ctrl-e", "explain the query (plan + summary)"],
         ["  ↑ / ↓", "recall query history"],
+        ["  tab", "pick a SQL++ snippet (ctrl-o opens docs)"],
         ["", ""],
         ["Actions", ""],
         ["  /", "fuzzy filter the focused pane"],

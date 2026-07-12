@@ -128,6 +128,43 @@ RSpec.describe Lazycouchbase::App, :tui do
     expect(app.state.doc.body).to include("\"#operator\": \"PrimaryScan3\"")
   end
 
+  it "inserts a snippet into the query editor with the keyspace filled in" do
+    run_app(":", "tab", "enter", :ctrl_c)
+
+    expect(app.state.mode).to eq(:query)
+    expect(app.state.query_text).to include("`beer-sample`.`_default`.`_default`")
+    expect(app.state.query_text).not_to include("%{keyspace}")
+  end
+
+  it "opens the snippet docs in the browser with ctrl-o" do
+    allow(Lazycouchbase::Browser).to receive(:open).and_return(true)
+
+    run_app(":", "tab", :ctrl_o, :ctrl_c)
+
+    expect(Lazycouchbase::Browser).to have_received(:open).with(a_string_starting_with("https://"))
+    expect(app.state.status_message).to include("Opened https://")
+    expect(app.state.mode).to eq(:snippet)
+  end
+
+  it "copies the docs url when no browser opener exists" do
+    allow(Lazycouchbase::Browser).to receive(:open).and_return(false)
+    allow(Lazycouchbase::Clipboard).to receive(:copy).and_return(true)
+
+    run_app(":", "tab", :ctrl_o, :ctrl_c)
+
+    expect(app.state.status_message).to include("copied https://")
+  end
+
+  it "shows the docs url when neither browser nor clipboard work" do
+    allow(Lazycouchbase::Browser).to receive(:open).and_return(false)
+    allow(Lazycouchbase::Clipboard).to receive(:copy).and_return(false)
+
+    run_app(":", "tab", :ctrl_o, :ctrl_c)
+
+    expect(app.state.status_kind).to eq(:error)
+    expect(app.state.status_message).to include("Docs: https://")
+  end
+
   it "preselects the configured bucket at startup" do
     bucket_config = Lazycouchbase::Config.new(overrides: { bucket: "travel-sample" })
     picky = described_class.new(client: client, config: bucket_config)

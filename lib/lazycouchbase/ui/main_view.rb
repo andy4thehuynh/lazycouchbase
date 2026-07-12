@@ -15,6 +15,7 @@ module Lazycouchbase
         @documents_pane = ListPane.new
         @document_view = DocumentView.new
         @query_view = QueryView.new
+        @snippet_view = SnippetView.new
         @help_view = HelpView.new
         @status_bar = StatusBar.new
       end
@@ -64,6 +65,7 @@ module Lazycouchbase
         case state.mode
         when :document, :document_search then @document_view.render(tui, frame, area, state)
         when :query then @query_view.render(tui, frame, area, state)
+        when :snippet then @snippet_view.render(tui, frame, area, state)
         else
           @documents_pane.render(tui, frame, area,
                                  props(state, :documents, state.documents, state.document_index))

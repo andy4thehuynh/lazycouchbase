@@ -232,6 +232,19 @@ RSpec.describe Lazycouchbase::AppState do
     end
   end
 
+  describe "#keyspace" do
+    it "backtick-quotes bucket, scope, and collection" do
+      state.buckets = %w[travel-sample]
+      state.collections = [Lazycouchbase::Client::CollectionRef.new(scope: "inventory", collection: "airline")]
+
+      expect(state.keyspace).to eq("`travel-sample`.`inventory`.`airline`")
+    end
+
+    it "is nil until a bucket and collection are selected" do
+      expect(state.keyspace).to be_nil
+    end
+  end
+
   describe "#show_document" do
     it "loads the document, clears the status, and enters document mode" do
       state.info("Connected")

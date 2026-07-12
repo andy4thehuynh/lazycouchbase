@@ -7,8 +7,8 @@ module Lazycouchbase
   # anything that needs data or IO (loading collections, running a query,
   # yanking to the clipboard, ...) is returned as an action symbol for the
   # App to perform: :quit, :load_collections, :load_documents,
-  # :open_document, :run_query, :refresh, :yank_document, or :yank_value.
-  # Returns nil when no action is needed.
+  # :open_document, :run_query, :refresh, :yank_document, :yank_value,
+  # or :open_docs. Returns nil when no action is needed.
   class KeyHandler
     PANE_KEYS = { "1" => :buckets, "2" => :collections, "3" => :documents }.freeze
     RELOAD_ACTIONS = { buckets: :load_collections, collections: :load_documents }.freeze
@@ -20,6 +20,7 @@ module Lazycouchbase
     def initialize(state)
       @state = state
       @document_keys = DocumentKeys.new(state)
+      @query_keys = QueryKeys.new(state)
     end
 
     def call(event)
@@ -35,7 +36,8 @@ module Lazycouchbase
 
     def mode_keys(event)
       case @state.mode
-      when :query then query_mode(event)
+      when :query then @query_keys.query(event)
+      when :snippet then @query_keys.snippet(event)
       when :document then @document_keys.document(event)
       when :document_search then @document_keys.search(event)
       when :help then help_mode(event)
@@ -98,50 +100,6 @@ module Lazycouchbase
 
     def focus_pane(pane)
       state.focus(pane)
-      nil
-    end
-
-    def close_query
-      state.query_history&.reset_position
-      state.switch_mode(:normal)
-      nil
-    end
-
-    def query_mode(event)
-      return query_action(:explain_query) if event == :ctrl_e
-
-      case event.code
-      when "esc" then close_query
-      when "enter" then query_action(:run_query)
-      when "backspace" then delete_query_char
-      when "up" then recall_query(:previous)
-      when "down" then recall_query(:next)
-      else append_query(event)
-      end
-    end
-
-    def query_action(action)
-      state.query_text.strip.empty? ? nil : action
-    end
-
-    def recall_query(direction)
-      history = state.query_history
-      return nil unless history
-
-      replacement = direction == :previous ? history.recall_previous : history.recall_next
-      state.query_text = replacement if replacement
-      nil
-    end
-
-    def delete_query_char
-      state.query_text = state.query_text[0...-1]
-      nil
-    end
-
-    def append_query(event)
-      return nil unless self.class.printable?(event)
-
-      state.query_text = state.query_text + event.code
       nil
     end
 

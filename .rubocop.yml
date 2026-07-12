@@ -33,6 +33,11 @@ Metrics/AbcSize:
 Style/Documentation:
   Enabled: false
 
+# %{keyspace} in SQL++ snippet templates is a user-facing placeholder
+# replaced with gsub, not a Kernel#format token.
+Style/FormatStringToken:
+  Enabled: false
+
 Style/FrozenStringLiteralComment:
   Enabled: true
 

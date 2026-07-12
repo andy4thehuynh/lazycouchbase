@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- SQL++ snippet library: `tab` in the query editor opens a fuzzy-searchable
+  picker of curated, runnable examples (basics, filtering, aggregation,
+  arrays, joins, subqueries, indexes, functions) with a live preview.
+  `enter` inserts the statement with the keyspace prefilled from the sidebar
+  selection; `ctrl-o` opens the snippet's SQL++ reference page in the
+  browser, falling back to the clipboard when no opener is available.
 - Query history: `↑`/`↓` in the query editor recall the last 30 executed
   queries, persisted across sessions in the XDG data directory.
 - `ctrl-e` explains the current query: a plain-English plan summary (index

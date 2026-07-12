@@ -226,6 +226,138 @@ RSpec.describe Lazycouchbase::KeyHandler do
     end
   end
 
+  describe "snippet mode" do
+    let(:snippets) do
+      [
+        Lazycouchbase::Snippet.new(
+          name: "Group and count", category: "Aggregation",
+          template: "SELECT country, COUNT(*) AS total FROM %{keyspace} GROUP BY country",
+          description: "Counts documents per country.", docs: "https://example.test/groupby"
+        ),
+        Lazycouchbase::Snippet.new(
+          name: "Select fields", category: "Basics",
+          template: "SELECT name FROM %{keyspace} LIMIT 10",
+          description: "Projects specific fields.", docs: "https://example.test/select"
+        )
+      ]
+    end
+
+    before do
+      state.snippets = Lazycouchbase::SnippetPicker.new(snippets)
+      state.switch_mode(:query)
+    end
+
+    it "opens the picker from the query editor on tab" do
+      handler.call(key("tab"))
+
+      expect(state.mode).to eq(:snippet)
+      expect(state.snippets.text).to eq("")
+    end
+
+    it "stays in the editor with an error when no snippets are loaded" do
+      state.snippets = Lazycouchbase::SnippetPicker.new([])
+
+      handler.call(key("tab"))
+
+      expect(state.mode).to eq(:query)
+      expect(state.status_kind).to eq(:error)
+      expect(state.status_message).to include("No snippets")
+    end
+
+    it "surfaces the first library warning when opening" do
+      state.snippets = Lazycouchbase::SnippetPicker.new(snippets, warnings: ["Skipped snippet 3 (missing docs)"])
+
+      handler.call(key("tab"))
+
+      expect(state.mode).to eq(:snippet)
+      expect(state.status_message).to include("Skipped snippet 3")
+    end
+
+    it "narrows the list as the user types" do
+      handler.call(key("tab"))
+      "bas".chars.each { |char| handler.call(key(char)) }
+
+      expect(state.snippets.matches.map(&:name)).to eq(["Select fields"])
+    end
+
+    it "inserts the highlighted snippet with the keyspace filled in" do
+      handler.call(key("tab"))
+      handler.call(key("down"))
+
+      handler.call(key("enter"))
+
+      expect(state.mode).to eq(:query)
+      expect(state.query_text).to eq("SELECT name FROM `beer-sample`.`_default`.`_default` LIMIT 10")
+      expect(state.status_message).to eq("Projects specific fields.")
+    end
+
+    it "leaves the placeholder when the sidebar has no selection" do
+      state.buckets = []
+      handler.call(key("tab"))
+
+      handler.call(key("enter"))
+
+      expect(state.query_text).to include("%{keyspace}")
+    end
+
+    it "degrades enter to a cancel when nothing matches" do
+      state.query_text = "SELECT 1"
+      handler.call(key("tab"))
+      "zzz".chars.each { |char| handler.call(key(char)) }
+
+      handler.call(key("enter"))
+
+      expect(state.mode).to eq(:query)
+      expect(state.query_text).to eq("SELECT 1")
+    end
+
+    it "returns to the editor without inserting on esc" do
+      state.query_text = "SELECT 1"
+      handler.call(key("tab"))
+
+      handler.call(key("esc"))
+
+      expect(state.mode).to eq(:query)
+      expect(state.query_text).to eq("SELECT 1")
+    end
+
+    it "requests the docs page for the highlighted snippet on ctrl-o" do
+      handler.call(key("tab"))
+
+      expect(handler.call(key("o", modifiers: ["ctrl"]))).to eq(:open_docs)
+      expect(state.mode).to eq(:snippet)
+    end
+
+    it "does not request docs when nothing matches" do
+      handler.call(key("tab"))
+      "zzz".chars.each { |char| handler.call(key(char)) }
+
+      expect(handler.call(key("o", modifiers: ["ctrl"]))).to be_nil
+    end
+
+    it "moves the highlight with the arrows and clamps at the edges" do
+      handler.call(key("tab"))
+
+      handler.call(key("down"))
+      expect(state.snippets.index).to eq(1)
+
+      handler.call(key("down"))
+      expect(state.snippets.index).to eq(1)
+
+      handler.call(key("up"))
+      expect(state.snippets.index).to eq(0)
+    end
+
+    it "deletes picker text with backspace" do
+      handler.call(key("tab"))
+      handler.call(key("b"))
+
+      handler.call(key("backspace"))
+
+      expect(state.snippets.text).to eq("")
+    end
+  end
+
   describe "filter mode" do
     it "opens the filter for the focused pane on /" do
       handler.call(key("/"))

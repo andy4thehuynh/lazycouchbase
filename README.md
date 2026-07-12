@@ -70,6 +70,14 @@ below the input. `↑`/`↓` recall the last 30 executed queries (persisted in
 statement — a plain-English summary of the plan (index usage, scans, joins, sorts) opens
 in the document view with the raw plan below it.
 
+`tab` in the query editor opens a SQL++ snippet library: two dozen curated, runnable
+examples (SELECT basics, MISSING vs NULL, GROUP BY, UNNEST and array operators, joins,
+subqueries, index tooling like ADVISE) organized by topic. Fuzzy-type to narrow, `↑`/`↓`
+to browse with a live preview, and `enter` inserts the statement into the editor with the
+keyspace prefilled from your sidebar selection — ready to run or tweak. `ctrl-o` opens the
+highlighted snippet's page in the official SQL++ reference in your browser (via `xdg-open`
+or `open`; with neither available the URL is copied to the clipboard instead).
+
 In the document view, `j`/`k` and `page up`/`page down` move a cursor line, and the status
 bar shows a breadcrumb of where that cursor is (`bucket › collection › id › path`). Long
 values soft-wrap with a hanging indent instead of being clipped. `/` searches lines
