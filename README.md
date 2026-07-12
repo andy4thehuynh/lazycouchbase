@@ -66,10 +66,12 @@ lazycouchbase --help
 | `q` / `ctrl-c`      | Quit                                          |
 
 In the query editor, type a N1QL statement and press `enter` to run it; results are shown
-below the input. `↑`/`↓` recall the last 30 executed queries (persisted in
-`$XDG_DATA_HOME/lazycouchbase/history.jsonl`), and `ctrl-e` runs `EXPLAIN` on the current
-statement — a plain-English summary of the plan (index usage, scans, joins, sorts) opens
-in the document view with the raw plan below it.
+below the input. `shift-enter` inserts a newline (the input box grows with the query) and
+`←`/`→` move the cursor, so statements can be edited in place; backspacing at the start of
+a line joins it with the previous one, which also removes empty lines. `↑`/`↓` recall the
+last 30 executed queries (persisted in `$XDG_DATA_HOME/lazycouchbase/history.jsonl`), and
+`ctrl-e` runs `EXPLAIN` on the current statement — a plain-English summary of the plan
+(index usage, scans, joins, sorts) opens in the document view with the raw plan below it.
 
 `tab` in the query editor opens a SQL++ snippet library: two dozen curated examples
 (SELECT basics, MISSING vs NULL, GROUP BY, UNNEST and array operators, joins, subqueries,
@@ -88,8 +90,7 @@ Each entry shows the index name, keys, any partial-index condition, and state; `
 opens the full catalog row in the document view, and `i` again flips back to documents.
 Navigation, `g`/`G`, and the `/` fuzzy filter work on the index list just like any pane.
 
-In the document view, `j`/`k` and `page up`/`page down` move a cursor line, and the status
-bar shows a breadcrumb of where that cursor is (`bucket › collection › id › path`). Long
+In the document view, `j`/`k` and `page up`/`page down` move a cursor line. Long
 values soft-wrap with a hanging indent instead of being clipped. `/` searches lines
 (fuzzy, like the pane filter) with `n`/`N` cycling matches, `t` toggles a keys-only
 outline (`enter` jumps to the selected key), and `y`/`Y` copy the whole document or the

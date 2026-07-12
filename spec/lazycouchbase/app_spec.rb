@@ -150,6 +150,12 @@ RSpec.describe Lazycouchbase::App, :tui do
     expect(app.state.status_message).to include("1 rows in 5ms")
   end
 
+  it "runs a multi-line query entered with shift+enter" do
+    run_app(":", *"SELECT 1".chars, :shift_enter, *"LIMIT 1".chars, "enter", :ctrl_c)
+
+    expect(client.executed_queries).to eq(["SELECT 1\nLIMIT 1"])
+  end
+
   it "records executed queries and recalls them with the up arrow" do
     run_app(":", *"SELECT 1".chars, "enter", :up, "enter", :ctrl_c)
 

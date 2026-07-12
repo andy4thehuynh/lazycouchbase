@@ -22,6 +22,8 @@ module Lazycouchbase
         ["", ""],
         ["Query editor", ""],
         ["  enter", "run the query"],
+        ["  shift-enter", "insert a newline"],
+        ["  ← / →", "move the cursor"],
         ["  ctrl-e", "explain the query (plan + summary)"],
         ["  ↑ / ↓", "recall query history"],
         ["  tab", "pick a SQL++ snippet (ctrl-o opens docs)"],

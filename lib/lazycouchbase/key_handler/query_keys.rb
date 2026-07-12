@@ -11,6 +11,7 @@ module Lazycouchbase
 
       def query(event)
         return action(:explain_query) if event == :ctrl_e
+        return insert_newline if event == :shift_enter
 
         case event.code
         when "esc" then close
@@ -40,10 +41,22 @@ module Lazycouchbase
       def edit(event)
         case event.code
         when "backspace" then delete_char
+        when "left" then move_cursor(-1)
+        when "right" then move_cursor(1)
         when "up" then recall(:previous)
         when "down" then recall(:next)
         else append(event)
         end
+      end
+
+      def insert_newline
+        state.insert_query("\n")
+        nil
+      end
+
+      def move_cursor(delta)
+        state.move_query_cursor(delta)
+        nil
       end
 
       def close
@@ -66,14 +79,14 @@ module Lazycouchbase
       end
 
       def delete_char
-        state.query_text = state.query_text[0...-1]
+        state.delete_query_char
         nil
       end
 
       def append(event)
         return nil unless KeyHandler.printable?(event)
 
-        state.query_text = state.query_text + event.code
+        state.insert_query(event.code)
         nil
       end
 

@@ -296,6 +296,44 @@ RSpec.describe Lazycouchbase::AppState do
     end
   end
 
+  describe "query editing" do
+    it "parks the cursor at the end when the text is replaced" do
+      state.query_text = "SELECT 1"
+
+      expect(state.query_cursor).to eq(8)
+    end
+
+    it "inserts at the cursor" do
+      state.query_text = "SELECT  FROM b"
+      state.move_query_cursor(-7)
+
+      state.insert_query("*")
+
+      expect(state.query_text).to eq("SELECT * FROM b")
+      expect(state.query_cursor).to eq(8)
+    end
+
+    it "deletes the character before the cursor and stops at the start" do
+      state.query_text = "ab"
+      state.move_query_cursor(-2)
+
+      state.delete_query_char
+
+      expect(state.query_text).to eq("ab")
+      expect(state.query_cursor).to eq(0)
+    end
+
+    it "clamps cursor movement to the text" do
+      state.query_text = "ab"
+
+      state.move_query_cursor(-9)
+      expect(state.query_cursor).to eq(0)
+
+      state.move_query_cursor(9)
+      expect(state.query_cursor).to eq(2)
+    end
+  end
+
   describe "#show_document" do
     it "loads the document, clears the status, and enters document mode" do
       state.info("Connected")

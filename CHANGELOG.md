@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   for everything collection-specific. `ctrl-o` opens the snippet's SQL++
   reference page in the browser, falling back to the clipboard when no
   opener is available.
+- Multi-line query editing: `shift-enter` inserts a newline (the input box
+  grows with the query), `←`/`→` move the cursor, and backspace joins
+  lines, so backspacing at the start of an empty line removes it.
 - Query history: `↑`/`↓` in the query editor recall the last 30 executed
   queries, persisted across sessions in the XDG data directory.
 - `ctrl-e` explains the current query: a plain-English plan summary (index
@@ -29,8 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `/` fuzzy filter for the buckets, collections, and documents panes: type to
   narrow with case-insensitive subsequence matching, `↑`/`↓` to move the
   highlight, `enter` to select, `esc` to cancel.
-- Document view cursor with a `bucket › collection › id › path` breadcrumb in
-  the status bar.
+- Document view cursor for line-by-line navigation. The status bar keeps
+  showing the connection label in every mode.
 - `/` line search inside the document view, with `n`/`N` cycling matches.
 - `t` keys-only outline of the open document; `enter` jumps to the selected key.
 - `y`/`Y` copy the document or the value under the cursor to the clipboard

@@ -177,6 +177,61 @@ RSpec.describe Lazycouchbase::KeyHandler do
       expect(state.query_text).to eq("SELEC")
     end
 
+    it "inserts a newline with shift+enter and stays in the editor" do
+      state.query_text = "SELECT 1"
+
+      handler.call(key("enter", modifiers: ["shift"]))
+
+      expect(state.query_text).to eq("SELECT 1\n")
+      expect(state.mode).to eq(:query)
+    end
+
+    it "moves the cursor with the arrows and types at the cursor" do
+      state.query_text = "SELET 1"
+      3.times { handler.call(key("left")) }
+
+      handler.call(key("C"))
+
+      expect(state.query_text).to eq("SELECT 1")
+    end
+
+    it "clamps the cursor to the text" do
+      state.query_text = "ab"
+      5.times { handler.call(key("left")) }
+      handler.call(key("x"))
+      expect(state.query_text).to eq("xab")
+
+      9.times { handler.call(key("right")) }
+      handler.call(key("y"))
+      expect(state.query_text).to eq("xaby")
+    end
+
+    it "deletes the character before the cursor" do
+      state.query_text = "SELECCT 1"
+      3.times { handler.call(key("left")) }
+
+      handler.call(key("backspace"))
+
+      expect(state.query_text).to eq("SELECT 1")
+    end
+
+    it "removes an empty trailing line when backspacing at its start" do
+      state.query_text = "SELECT 1\n"
+
+      handler.call(key("backspace"))
+
+      expect(state.query_text).to eq("SELECT 1")
+    end
+
+    it "joins lines when backspacing at the start of a line" do
+      state.query_text = "SELECT 1\nWHERE"
+      5.times { handler.call(key("left")) }
+
+      handler.call(key("backspace"))
+
+      expect(state.query_text).to eq("SELECT 1WHERE")
+    end
+
     it "runs the query on enter" do
       state.query_text = "SELECT 1"
 

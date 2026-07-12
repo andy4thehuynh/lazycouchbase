@@ -4,8 +4,8 @@ require "ratatui_ruby"
 
 module Lazycouchbase
   module UI
-    # Single-line footer: status message on the left, contextual key hints
-    # and the connection label on the right.
+    # Single-line footer: connection label and status message on the left,
+    # contextual key hints on the right.
     class StatusBar
       HINTS = {
         normal: "j/k: move │ enter: open │ /: filter │ :: query │ ?: help │ q: quit",
@@ -35,21 +35,8 @@ module Lazycouchbase
       private
 
       def left_side(state)
-        return document_breadcrumb(state) if %i[document document_search].include?(state.mode)
-        return " #{state.status_message}" if state.connection_label.empty?
-
-        " #{state.connection_label} │ #{state.status_message}"
-      end
-
-      # Where the cursor is, not where the connection points: the document
-      # modes trade the connection label for orientation.
-      def document_breadcrumb(state)
-        parts = [state.selected_bucket, state.selected_collection, state.doc.id]
-        parts << state.doc.path unless state.doc.path.empty?
-        crumb = parts.compact.map(&:to_s).join(" › ")
-        return " #{crumb}" if state.status_message.empty?
-
-        " #{crumb} │ #{state.status_message}"
+        parts = [state.connection_label, state.status_message].reject(&:empty?)
+        " #{parts.join(" │ ")}"
       end
     end
   end

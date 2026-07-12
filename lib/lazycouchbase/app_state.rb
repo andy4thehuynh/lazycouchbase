@@ -9,6 +9,7 @@ module Lazycouchbase
   # unit-testable.
   class AppState
     include Filtering
+    include QueryEditing
 
     PANES = %i[buckets collections documents].freeze
     MODES = %i[normal query document document_search help filter snippet].freeze
@@ -16,31 +17,16 @@ module Lazycouchbase
     attr_reader :mode, :focused_pane, :buckets, :collections, :documents,
                 :bucket_index, :collection_index, :document_index,
                 :indexes, :index_index,
-                :query_text, :filter_text, :filter_index, :doc
+                :query_text, :query_cursor, :filter_text, :filter_index, :doc
     attr_accessor :query_rows, :query_status, :query_history, :snippets,
                   :status_message, :status_kind, :connection_label
 
     def initialize
       @mode = :normal
       @focused_pane = :buckets
-      @buckets = []
-      @collections = []
-      @documents = []
-      @bucket_index = 0
-      @collection_index = 0
-      @document_index = 0
-      @indexes = []
-      @index_index = 0
-      @show_indexes = false
       @doc = DocumentState.new
-      @query_text = ""
-      @query_rows = []
-      @snippets = SnippetPicker.new([])
-      @filter_text = ""
-      @filter_index = 0
-      @status_message = ""
-      @status_kind = :info
-      @connection_label = ""
+      initialize_lists
+      initialize_editor
     end
 
     def switch_mode(mode)
@@ -147,10 +133,6 @@ module Lazycouchbase
       switch_mode(:document)
     end
 
-    def query_text=(value)
-      @query_text = value || ""
-    end
-
     def info(message)
       @status_message = message
       @status_kind = :info
@@ -162,6 +144,30 @@ module Lazycouchbase
     end
 
     private
+
+    def initialize_lists
+      @buckets = []
+      @collections = []
+      @documents = []
+      @indexes = []
+      @bucket_index = 0
+      @collection_index = 0
+      @document_index = 0
+      @index_index = 0
+      @show_indexes = false
+    end
+
+    def initialize_editor
+      @query_text = ""
+      @query_cursor = 0
+      @query_rows = []
+      @snippets = SnippetPicker.new([])
+      @filter_text = ""
+      @filter_index = 0
+      @status_message = ""
+      @status_kind = :info
+      @connection_label = ""
+    end
 
     def select_index(target)
       return nil if focused_list.empty? || target == focused_index

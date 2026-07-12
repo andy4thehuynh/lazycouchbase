@@ -91,13 +91,14 @@ RSpec.describe Lazycouchbase::UI::MainView, :tui do
     expect(screen).not_to include("[3] Documents")
   end
 
-  it "shows a breadcrumb for the cursor position in the status bar" do
+  it "keeps the connection label in the status bar in document mode" do
     state.show_document("airline_10", { "geo" => { "lat" => 48.5 } })
     state.doc.move_cursor(2)
 
     screen = rendered(width: 140)
 
-    expect(screen).to include("beer-sample › _default._default › airline_10 › geo.lat")
+    expect(screen).to include("localhost")
+    expect(screen).not_to include("airline_10 › geo.lat")
   end
 
   it "soft-wraps long values instead of clipping them" do
@@ -157,6 +158,17 @@ RSpec.describe Lazycouchbase::UI::MainView, :tui do
     expect(screen).to include("Basics › Select fields")
     expect(screen).to include("FROM `travel-sample`.inventory.airline")
     expect(screen).to include("docs: https://")
+  end
+
+  it "renders a multi-line query with the cursor mid-text" do
+    state.switch_mode(:query)
+    state.query_text = "SELECT name\nFROM here"
+    state.move_query_cursor(-9)
+
+    screen = rendered
+
+    expect(screen).to include("SELECT name")
+    expect(screen).to include("█FROM here")
   end
 
   it "renders the help screen in help mode" do

@@ -12,7 +12,7 @@ module Lazycouchbase
         input_area, results_area = tui.layout_split(
           area,
           direction: :vertical,
-          constraints: [tui.constraint_length(3), tui.constraint_fill(1)]
+          constraints: [tui.constraint_length(input_height(state)), tui.constraint_fill(1)]
         )
 
         render_input(tui, frame, input_area, state)
@@ -21,9 +21,14 @@ module Lazycouchbase
 
       private
 
+      # The input box grows with the query, one row per line plus borders.
+      def input_height(state)
+        state.query_text.count("\n") + 3
+      end
+
       def render_input(tui, frame, area, state)
         input = tui.paragraph(
-          text: state.query_text + CURSOR,
+          text: state.query_text.dup.insert(state.query_cursor, CURSOR),
           block: tui.block(
             title: " N1QL Query ",
             borders: [:all],
