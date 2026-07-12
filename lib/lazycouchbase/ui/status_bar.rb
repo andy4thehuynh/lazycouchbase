@@ -7,14 +7,16 @@ module Lazycouchbase
     # Single-line footer: connection label and status message on the left,
     # contextual key hints on the right.
     class StatusBar
+      # Deliberately terse — the full keymap lives behind ?. The hints only
+      # cover moving, getting help, and getting out.
       HINTS = {
-        normal: "j/k: move │ enter: open │ /: filter │ :: query │ ?: help │ q: quit",
-        query: "enter: run │ ctrl-e: explain │ tab: snippets │ ↑/↓: history │ esc: back",
-        snippet: "type to narrow │ ↑/↓: move │ enter: insert │ ctrl-o: docs │ esc: back",
-        document: "j/k: move │ /: search │ t: keys │ y/Y: yank │ esc: back",
-        document_search: "type to search │ enter: jump │ esc: cancel",
+        normal: "j/k: move │ ?: help │ q: quit",
+        query: "enter: run │ esc: back",
+        snippet: "enter: insert │ esc: back",
+        document: "j/k: move │ esc: back",
+        document_search: "enter: jump │ esc: cancel",
         help: "esc: close",
-        filter: "type to narrow │ ↑/↓: move │ enter: select │ esc: cancel"
+        filter: "enter: select │ esc: cancel"
       }.freeze
 
       def render(tui, frame, area, state)

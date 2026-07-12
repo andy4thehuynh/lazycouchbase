@@ -41,6 +41,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Long document lines soft-wrap with a hanging indent instead of being
   clipped at the pane edge.
 
+### Changed
+
+- Status bar hints trimmed to the essentials (move, help, back/quit); the
+  full keymap lives in the `?` help screen.
+
 ### Fixed
 
 - Document view preserves the JSON indentation instead of flattening it.
