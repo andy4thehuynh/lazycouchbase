@@ -3,6 +3,7 @@
 # In-memory stand-in for Lazycouchbase::Client.
 #
 # Data is a nested hash: bucket name => "scope.collection" => id => content.
+# +indexes:+ follows the same shape with system:indexes row hashes as leaves.
 # Pass +error:+ to make every data method raise Client::Error, +error_on:+
 # (method name => message) to fail specific methods only, and
 # +query_result:+ to canned-answer #query.
@@ -13,8 +14,10 @@ class FakeClient
     rows: [{ "greeting" => "hello" }], status: "success", elapsed_ms: 5
   )
 
-  def initialize(buckets: {}, connection: nil, query_result: DEFAULT_QUERY_RESULT, error: nil, error_on: {})
+  def initialize(buckets: {}, indexes: {}, connection: nil, query_result: DEFAULT_QUERY_RESULT,
+                 error: nil, error_on: {})
     @buckets = buckets
+    @indexes = indexes
     @connection = connection || Lazycouchbase::Config::Connection.new(
       host: "test-host", username: "tester", password: "secret", bucket: nil
     )
@@ -66,6 +69,12 @@ class FakeClient
   def document(bucket_name, ref, id)
     fail_if_configured(:document)
     documents_in(bucket_name, ref).fetch(id)
+  end
+
+  def indexes(bucket_name, ref)
+    fail_if_configured(:indexes)
+    rows = @indexes.fetch(bucket_name, {}).fetch(ref.to_s, [])
+    rows.map { |row| Lazycouchbase::Client::IndexInfo.from_row(row) }
   end
 
   def query(statement)

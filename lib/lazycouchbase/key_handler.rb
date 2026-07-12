@@ -12,6 +12,7 @@ module Lazycouchbase
   class KeyHandler
     PANE_KEYS = { "1" => :buckets, "2" => :collections, "3" => :documents }.freeze
     RELOAD_ACTIONS = { buckets: :load_collections, collections: :load_documents }.freeze
+    ACTION_KEYS = { "q" => :quit, "r" => :refresh }.freeze
 
     def self.printable?(event)
       event.code.length == 1 && (event.modifiers - ["shift"]).empty?
@@ -47,12 +48,13 @@ module Lazycouchbase
     end
 
     def normal_mode(event)
+      return ACTION_KEYS.fetch(event.code) if ACTION_KEYS.key?(event.code)
+
       case event.code
-      when "q" then :quit
-      when "r" then :refresh
       when "?" then switch(:help)
       when ":" then switch(:query)
       when "/" then open_filter
+      when "i" then toggle_indexes
       when "enter" then activate
       else navigation(event)
       end
@@ -94,8 +96,20 @@ module Lazycouchbase
       case state.focused_pane
       when :buckets then focus_pane(:collections)
       when :collections then focus_pane(:documents)
-      else state.selected_document && :open_document
+      else open_main_item
       end
+    end
+
+    def open_main_item
+      if state.indexes_shown?
+        state.selected_index && :open_index
+      else
+        state.selected_document && :open_document
+      end
+    end
+
+    def toggle_indexes
+      state.toggle_indexes ? :load_indexes : :load_documents
     end
 
     def focus_pane(pane)

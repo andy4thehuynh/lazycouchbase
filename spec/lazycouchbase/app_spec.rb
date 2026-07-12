@@ -17,6 +17,14 @@ RSpec.describe Lazycouchbase::App, :tui do
         "travel-sample" => {
           "inventory.airline" => { "airline_10" => { "name" => "40-Mile Air" } }
         }
+      },
+      indexes: {
+        "beer-sample" => {
+          "_default._default" => [
+            { "name" => "#primary", "index_key" => [], "state" => "online", "is_primary" => true },
+            { "name" => "idx_name", "index_key" => ["`name`"], "state" => "online" }
+          ]
+        }
       }
     )
   end
@@ -102,6 +110,36 @@ RSpec.describe Lazycouchbase::App, :tui do
 
     expect(app.state.mode).to eq(:document)
     expect(app.state.doc.id).to eq("stout-1")
+  end
+
+  it "lists the collection's indexes when toggled with i" do
+    run_app("i", "q")
+
+    expect(app.state.indexes_shown?).to be(true)
+    expect(app.state.indexes.map(&:name)).to eq(["#primary", "idx_name"])
+  end
+
+  it "returns to a fresh documents list when toggled back" do
+    run_app("i", "i", "q")
+
+    expect(app.state.indexes_shown?).to be(false)
+    expect(app.state.documents).to eq(%w[ipa-1 stout-1])
+  end
+
+  it "reloads indexes for the new collection when the selection moves" do
+    run_app("i", "j", "q")
+
+    expect(app.state.selected_bucket).to eq("travel-sample")
+    expect(app.state.indexes_shown?).to be(true)
+    expect(app.state.indexes).to be_empty
+  end
+
+  it "opens an index definition in the document view" do
+    run_app("i", "3", "j", "enter", :ctrl_c)
+
+    expect(app.state.mode).to eq(:document)
+    expect(app.state.doc.id).to eq("idx_name")
+    expect(app.state.doc.body).to include("index_key")
   end
 
   it "runs a query typed into the query editor" do

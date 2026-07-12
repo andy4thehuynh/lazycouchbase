@@ -29,6 +29,7 @@ module Lazycouchbase
         ["Actions", ""],
         ["  /", "fuzzy filter the focused pane"],
         ["  :", "open the N1QL query editor"],
+        ["  i", "toggle indexes / documents in pane 3"],
         ["  r", "refresh the focused pane"],
         ["  esc", "back"],
         ["  ?", "toggle this help"],

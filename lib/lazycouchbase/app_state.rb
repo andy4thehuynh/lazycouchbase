@@ -8,11 +8,14 @@ module Lazycouchbase
   # It knows nothing about Couchbase or the terminal, which keeps it fully
   # unit-testable.
   class AppState
+    include Filtering
+
     PANES = %i[buckets collections documents].freeze
     MODES = %i[normal query document document_search help filter snippet].freeze
 
     attr_reader :mode, :focused_pane, :buckets, :collections, :documents,
                 :bucket_index, :collection_index, :document_index,
+                :indexes, :index_index,
                 :query_text, :filter_text, :filter_index, :doc
     attr_accessor :query_rows, :query_status, :query_history, :snippets,
                   :status_message, :status_kind, :connection_label
@@ -26,6 +29,9 @@ module Lazycouchbase
       @bucket_index = 0
       @collection_index = 0
       @document_index = 0
+      @indexes = []
+      @index_index = 0
+      @show_indexes = false
       @doc = DocumentState.new
       @query_text = ""
       @query_rows = []
@@ -72,6 +78,25 @@ module Lazycouchbase
     def documents=(ids)
       @documents = ids
       @document_index = 0
+      self.indexes = []
+    end
+
+    def indexes=(list)
+      @indexes = list
+      @index_index = 0
+    end
+
+    def indexes_shown?
+      @show_indexes
+    end
+
+    # Flips pane 3 between the collection's documents and its indexes.
+    # Returns true when indexes are now shown, so the caller knows which
+    # list needs loading.
+    def toggle_indexes
+      @show_indexes = !@show_indexes
+      self.indexes = [] unless @show_indexes
+      @show_indexes
     end
 
     def selected_bucket
@@ -84,6 +109,10 @@ module Lazycouchbase
 
     def selected_document
       @documents[@document_index]
+    end
+
+    def selected_index
+      @indexes[@index_index]
     end
 
     # The sidebar selection as a fully qualified, backtick-quoted
@@ -122,49 +151,6 @@ module Lazycouchbase
       @query_text = value || ""
     end
 
-    # The filter is a transient, fzf-style picker over the focused pane: it
-    # only exists while filter mode is open. Committing selects the
-    # highlighted match in the underlying list; cancelling leaves the pane
-    # exactly as it was.
-    def start_filter
-      switch_mode(:filter)
-      @filter_text = ""
-      @filter_index = 0
-    end
-
-    def filter_text=(value)
-      @filter_text = value || ""
-      @filter_index = 0
-    end
-
-    def filter_matches
-      focused_list.select { |item| Fuzzy.match?(@filter_text, item.to_s) }
-    end
-
-    def move_filter_selection(delta)
-      @filter_index = (@filter_index + delta).clamp(0, [filter_matches.size - 1, 0].max)
-    end
-
-    # Returns true when the pane's selection actually moved, so the caller
-    # knows whether dependent panes need reloading. With no match to choose,
-    # committing degrades to a cancel.
-    def commit_filter
-      chosen = filter_matches[@filter_index]
-      cancel_filter
-      return false unless chosen
-
-      target = focused_list.index(chosen)
-      changed = target != focused_index
-      self.focused_index = target
-      changed
-    end
-
-    def cancel_filter
-      switch_mode(:normal)
-      @filter_text = ""
-      @filter_index = 0
-    end
-
     def info(message)
       @status_message = message
       @status_kind = :info
@@ -183,19 +169,30 @@ module Lazycouchbase
       self.focused_index = target
     end
 
+    # Pane 3 holds either documents or indexes; navigation and filtering
+    # follow whichever is on screen.
     def focused_list
-      { buckets: @buckets, collections: @collections, documents: @documents }.fetch(@focused_pane)
+      { buckets: @buckets, collections: @collections, documents: main_list }.fetch(@focused_pane)
+    end
+
+    def main_list
+      indexes_shown? ? @indexes : @documents
     end
 
     def focused_index
-      { buckets: @bucket_index, collections: @collection_index, documents: @document_index }.fetch(@focused_pane)
+      case @focused_pane
+      when :buckets then @bucket_index
+      when :collections then @collection_index
+      else indexes_shown? ? @index_index : @document_index
+      end
     end
 
     def focused_index=(value)
       case @focused_pane
       when :buckets then @bucket_index = value
       when :collections then @collection_index = value
-      else @document_index = value
+      when :documents
+        indexes_shown? ? @index_index = value : @document_index = value
       end
     end
   end

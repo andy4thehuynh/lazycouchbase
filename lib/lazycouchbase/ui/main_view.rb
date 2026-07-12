@@ -67,8 +67,15 @@ module Lazycouchbase
         when :query then @query_view.render(tui, frame, area, state)
         when :snippet then @snippet_view.render(tui, frame, area, state)
         else
-          @documents_pane.render(tui, frame, area,
-                                 props(state, :documents, state.documents, state.document_index))
+          @documents_pane.render(tui, frame, area, main_pane_props(state))
+        end
+      end
+
+      def main_pane_props(state)
+        if state.indexes_shown?
+          props(state, :documents, state.indexes, state.index_index)
+        else
+          props(state, :documents, state.documents, state.document_index)
         end
       end
 
@@ -76,11 +83,17 @@ module Lazycouchbase
         return filter_props(state, pane, items) if filtering?(state, pane)
 
         ListPane::Props.new(
-          title: " #{PANE_LABELS.fetch(pane)} (#{items.size}) ",
+          title: " #{pane_label(state, pane)} (#{items.size}) ",
           items: items,
           selected: selected,
           focused: state.focused_pane == pane
         )
+      end
+
+      def pane_label(state, pane)
+        return "[3] Indexes" if pane == :documents && state.indexes_shown?
+
+        PANE_LABELS.fetch(pane)
       end
 
       def filtering?(state, pane)
@@ -90,7 +103,7 @@ module Lazycouchbase
       def filter_props(state, pane, items)
         matches = state.filter_matches
         ListPane::Props.new(
-          title: " #{PANE_LABELS.fetch(pane)} (#{matches.size}/#{items.size}) /#{state.filter_text}█ ",
+          title: " #{pane_label(state, pane)} (#{matches.size}/#{items.size}) /#{state.filter_text}█ ",
           items: matches,
           selected: state.filter_index,
           focused: true

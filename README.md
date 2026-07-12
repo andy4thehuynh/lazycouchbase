@@ -58,6 +58,7 @@ lazycouchbase --help
 | `g` / `G`           | Jump to first / last entry                    |
 | `enter`             | Drill in; open the selected document          |
 | `/`                 | Fuzzy filter the focused pane                 |
+| `i`                 | Toggle indexes / documents in pane 3          |
 | `:`                 | Open the N1QL query editor                    |
 | `r`                 | Refresh the focused pane                      |
 | `esc`               | Back                                          |
@@ -77,6 +78,12 @@ to browse with a live preview, and `enter` inserts the statement into the editor
 keyspace prefilled from your sidebar selection — ready to run or tweak. `ctrl-o` opens the
 highlighted snippet's page in the official SQL++ reference in your browser (via `xdg-open`
 or `open`; with neither available the URL is copied to the clipboard instead).
+
+`i` flips the documents pane to the indexes covering the selected collection (from
+`system:indexes`, including legacy bucket-level indexes when browsing `_default._default`).
+Each entry shows the index name, keys, any partial-index condition, and state; `enter`
+opens the full catalog row in the document view, and `i` again flips back to documents.
+Navigation, `g`/`G`, and the `/` fuzzy filter work on the index list just like any pane.
 
 In the document view, `j`/`k` and `page up`/`page down` move a cursor line, and the status
 bar shows a breadcrumb of where that cursor is (`bucket › collection › id › path`). Long

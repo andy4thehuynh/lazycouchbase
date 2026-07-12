@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `i` toggles pane 3 between a collection's documents and its indexes
+  (from `system:indexes`, including legacy bucket-level indexes on the
+  default collection). Entries show name, keys, partial-index condition,
+  and state; `enter` opens the full catalog row in the document view.
 - SQL++ snippet library: `tab` in the query editor opens a fuzzy-searchable
   picker of curated, runnable examples (basics, filtering, aggregation,
   arrays, joins, subqueries, indexes, functions) with a live preview.

@@ -131,6 +131,21 @@ RSpec.describe Lazycouchbase::UI::MainView, :tui do
     expect(screen).to include('{"answer":42}')
   end
 
+  it "renders the index list when indexes are shown" do
+    state.toggle_indexes
+    state.indexes = [
+      Lazycouchbase::Client::IndexInfo.from_row(
+        "name" => "idx_name", "index_key" => ["`name`"], "state" => "online"
+      )
+    ]
+
+    screen = rendered
+
+    expect(screen).to include("[3] Indexes (1)")
+    expect(screen).to include("idx_name (`name`) [online]")
+    expect(screen).not_to include("[3] Documents")
+  end
+
   it "renders the snippet picker and preview in snippet mode" do
     library = Lazycouchbase::SnippetLibrary.new
     state.snippets = Lazycouchbase::SnippetPicker.new(library.snippets)

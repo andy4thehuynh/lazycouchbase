@@ -232,6 +232,57 @@ RSpec.describe Lazycouchbase::AppState do
     end
   end
 
+  describe "indexes toggle" do
+    before do
+      state.buckets = %w[beer-sample]
+      state.collections = %w[_default._default]
+      state.documents = %w[doc-1 doc-2]
+      state.focus(:documents)
+    end
+
+    it "starts with documents shown" do
+      expect(state.indexes_shown?).to be(false)
+    end
+
+    it "toggles on and off, clearing stale indexes when hidden" do
+      expect(state.toggle_indexes).to be(true)
+      state.indexes = %w[idx-a]
+
+      expect(state.toggle_indexes).to be(false)
+      expect(state.indexes).to be_empty
+    end
+
+    it "routes pane 3 navigation to the index list while shown" do
+      state.toggle_indexes
+      state.indexes = %w[idx-a idx-b]
+
+      state.move_selection(1)
+
+      expect(state.index_index).to eq(1)
+      expect(state.document_index).to eq(0)
+      expect(state.selected_index).to eq("idx-b")
+    end
+
+    it "filters over the index list while shown" do
+      state.toggle_indexes
+      state.indexes = %w[idx_country idx_name]
+      state.start_filter
+      state.filter_text = "name"
+
+      expect(state.commit_filter).to be(true)
+      expect(state.selected_index).to eq("idx_name")
+    end
+
+    it "clears indexes when the documents list changes" do
+      state.toggle_indexes
+      state.indexes = %w[idx-a]
+
+      state.documents = %w[doc-9]
+
+      expect(state.indexes).to be_empty
+    end
+  end
+
   describe "#keyspace" do
     it "backtick-quotes bucket, scope, and collection" do
       state.buckets = %w[travel-sample]

@@ -23,6 +23,28 @@ module Lazycouchbase
       end
     end
 
+    # One row of system:indexes, with the raw row kept for the detail view.
+    IndexInfo = Data.define(:name, :keys, :state, :primary, :condition, :raw) do
+      def self.from_row(row)
+        new(
+          name: row["name"].to_s,
+          keys: Array(row["index_key"]),
+          state: row["state"].to_s,
+          primary: row["is_primary"] == true,
+          condition: row["condition"],
+          raw: row
+        )
+      end
+
+      def to_s
+        parts = [name]
+        parts << "(#{keys.join(", ")})" unless keys.empty?
+        parts << "WHERE #{condition}" if condition
+        parts << (primary ? "[primary, #{state}]" : "[#{state}]")
+        parts.join(" ")
+      end
+    end
+
     attr_reader :connection
 
     def initialize(connection, cluster: nil)
@@ -77,6 +99,13 @@ module Lazycouchbase
       end
     end
 
+    # Indexes covering a collection, from the system:indexes catalog.
+    def indexes(bucket_name, ref)
+      wrap_errors("listing indexes for #{bucket_name}.#{ref}") do
+        cluster.query(index_statement(bucket_name, ref)).rows.to_a.map { |row| IndexInfo.from_row(row) }
+      end
+    end
+
     # Returns the raw plan document for a statement (any leading EXPLAIN is
     # stripped first so recalled EXPLAIN queries are not double-prefixed).
     def explain(statement)
@@ -113,6 +142,25 @@ module Lazycouchbase
 
     def keyspace(bucket_name, ref)
       [bucket_name, ref.scope, ref.collection].map { |part| "`#{part}`" }.join(".")
+    end
+
+    # Pre-collection "bucket indexes" live on the default collection, where
+    # the catalog stores the bucket name as the keyspace with no bucket_id.
+    def index_statement(bucket_name, ref)
+      scopes = [
+        "(idx.bucket_id = #{quote(bucket_name)} AND idx.scope_id = #{quote(ref.scope)} " \
+        "AND idx.keyspace_id = #{quote(ref.collection)})"
+      ]
+      scopes << "(idx.bucket_id IS MISSING AND idx.keyspace_id = #{quote(bucket_name)})" if default_collection?(ref)
+      "SELECT idx.* FROM system:indexes AS idx WHERE #{scopes.join(" OR ")} ORDER BY idx.name"
+    end
+
+    def default_collection?(ref)
+      ref.scope == "_default" && ref.collection == "_default"
+    end
+
+    def quote(value)
+      %("#{value.to_s.gsub(/["\\]/) { |char| "\\#{char}" }}")
     end
 
     def wrap_errors(context)

@@ -29,6 +29,11 @@ Metrics/ClassLength:
 Metrics/AbcSize:
   Max: 25
 
+# Keyword arguments carry their names at the call site, so long keyword
+# lists do not have the positional-confusion risk this cop guards against.
+Metrics/ParameterLists:
+  CountKeywordArgs: false
+
 # Style
 Style/Documentation:
   Enabled: false

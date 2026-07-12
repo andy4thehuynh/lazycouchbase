@@ -141,6 +141,77 @@ RSpec.describe Lazycouchbase::Client do
     end
   end
 
+  describe "#indexes" do
+    let(:rows) do
+      [
+        { "name" => "#primary", "index_key" => [], "state" => "online", "is_primary" => true },
+        { "name" => "idx_country", "index_key" => ["`country`"], "state" => "online" }
+      ]
+    end
+    let(:result) { instance_double(Couchbase::Cluster::QueryResult, rows: rows.lazy) }
+
+    it "queries system:indexes scoped to the collection" do
+      allow(cluster).to receive(:query).and_return(result)
+
+      infos = client.indexes("travel-sample", collection_ref("inventory", "airline"))
+
+      expect(cluster).to have_received(:query).with(
+        a_string_including('idx.bucket_id = "travel-sample" AND idx.scope_id = "inventory" ' \
+                           'AND idx.keyspace_id = "airline"')
+      )
+      expect(infos.map(&:name)).to eq(["#primary", "idx_country"])
+    end
+
+    it "also matches legacy bucket-level indexes for the default collection" do
+      allow(cluster).to receive(:query).and_return(result)
+
+      client.indexes("beer-sample", collection_ref("_default", "_default"))
+
+      expect(cluster).to have_received(:query).with(
+        a_string_including('OR (idx.bucket_id IS MISSING AND idx.keyspace_id = "beer-sample")')
+      )
+    end
+
+    it "does not match bucket-level indexes for named collections" do
+      allow(cluster).to receive(:query).and_return(result)
+
+      client.indexes("travel-sample", collection_ref("inventory", "airline"))
+
+      expect(cluster).not_to have_received(:query).with(a_string_including("IS MISSING"))
+    end
+
+    it "wraps catalog failures in Client::Error" do
+      allow(cluster).to receive(:query).and_raise(StandardError, "forbidden")
+
+      expect do
+        client.indexes("travel-sample", collection_ref("inventory", "airline"))
+      end.to raise_error(Lazycouchbase::Client::Error, /listing indexes.*forbidden/)
+    end
+  end
+
+  describe Lazycouchbase::Client::IndexInfo do
+    it "describes a secondary index with keys, condition, and state" do
+      info = described_class.from_row(
+        "name" => "idx_country", "index_key" => ["`country`"], "state" => "online",
+        "condition" => "(`type` = \"hotel\")"
+      )
+
+      expect(info.to_s).to eq("idx_country (`country`) WHERE (`type` = \"hotel\") [online]")
+    end
+
+    it "marks primary indexes" do
+      info = described_class.from_row("name" => "#primary", "state" => "online", "is_primary" => true)
+
+      expect(info.to_s).to eq("#primary [primary, online]")
+    end
+
+    it "keeps the raw row for the detail view" do
+      row = { "name" => "idx_name", "index_key" => ["`name`"], "state" => "deferred" }
+
+      expect(described_class.from_row(row).raw).to eq(row)
+    end
+  end
+
   describe "#explain" do
     it "prefixes EXPLAIN and returns the first row" do
       result = instance_double(Couchbase::Cluster::QueryResult, rows: [{ "plan" => { "#operator" => "Sequence" } }])

@@ -114,6 +114,37 @@ RSpec.describe Lazycouchbase::KeyHandler do
 
       expect(handler.call(key("enter"))).to be_falsey
     end
+
+    describe "indexes toggle" do
+      it "shows indexes with i and requests a load" do
+        state.focus(:collections)
+
+        expect(handler.call(key("i"))).to eq(:load_indexes)
+        expect(state.indexes_shown?).to be(true)
+      end
+
+      it "flips back to documents with a reload" do
+        handler.call(key("i"))
+
+        expect(handler.call(key("i"))).to eq(:load_documents)
+        expect(state.indexes_shown?).to be(false)
+      end
+
+      it "opens the selected index with enter in pane 3" do
+        handler.call(key("i"))
+        state.indexes = %w[idx-a]
+        state.focus(:documents)
+
+        expect(handler.call(key("enter"))).to eq(:open_index)
+      end
+
+      it "does not open anything when the index list is empty" do
+        handler.call(key("i"))
+        state.focus(:documents)
+
+        expect(handler.call(key("enter"))).to be_falsey
+      end
+    end
   end
 
   describe "query mode" do
