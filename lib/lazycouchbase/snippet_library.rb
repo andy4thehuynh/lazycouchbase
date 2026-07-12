@@ -7,7 +7,7 @@ module Lazycouchbase
   # entries are skipped with a warning instead of raising: the snippet
   # picker is a convenience and must never take the app down at startup.
   class SnippetLibrary
-    REQUIRED = %w[name category template description docs].freeze
+    REQUIRED = %w[name category template example description docs].freeze
 
     def self.default_path
       File.expand_path("../../data/snippets.toml", __dir__)

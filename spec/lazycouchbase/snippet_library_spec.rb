@@ -23,10 +23,20 @@ RSpec.describe Lazycouchbase::SnippetLibrary do
       expect(library.snippets.map(&:docs)).to all(start_with("https://"))
     end
 
-    it "keeps templates on a single line for the one-line editor" do
-      multiline = library.snippets.select { |snippet| snippet.template.include?("\n") }
+    it "keeps templates and examples on a single line for the one-line editor" do
+      multiline = library.snippets.select do |snippet|
+        snippet.template.include?("\n") || snippet.example.include?("\n")
+      end
 
       expect(multiline).to be_empty
+    end
+
+    it "keeps examples concrete — no placeholders left in them" do
+      unfinished = library.snippets.select do |snippet|
+        snippet.example.match?(/%\{keyspace\}|\bf1\b|\bks2\b|"v1"/)
+      end
+
+      expect(unfinished).to be_empty
     end
   end
 
@@ -37,6 +47,7 @@ RSpec.describe Lazycouchbase::SnippetLibrary do
         name = "Good"
         category = "Basics"
         template = "SELECT 1"
+        example = "SELECT 1"
         description = "Fine."
         docs = "https://example.test"
 
@@ -58,6 +69,7 @@ RSpec.describe Lazycouchbase::SnippetLibrary do
         name = "Blank template"
         category = "Basics"
         template = "   "
+        example = "SELECT 1"
         description = "Nope."
         docs = "https://example.test"
       TOML

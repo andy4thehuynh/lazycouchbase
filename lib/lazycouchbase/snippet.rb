@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
 module Lazycouchbase
-  # A single SQL++ example: a ready-to-run template plus the docs page that
-  # explains the concept it demonstrates.
-  Snippet = Data.define(:name, :category, :template, :description, :docs) do
+  # A single SQL++ lesson: an insertable skeleton (template), a runnable
+  # travel-sample version of it (example), and the docs page that explains
+  # the concept it demonstrates.
+  Snippet = Data.define(:name, :category, :template, :example, :description, :docs) do
     def label
       "#{category} › #{name}"
     end

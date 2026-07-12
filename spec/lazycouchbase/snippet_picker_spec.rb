@@ -13,7 +13,7 @@ RSpec.describe Lazycouchbase::SnippetPicker do
 
   def build_snippet(name:, category:)
     Lazycouchbase::Snippet.new(
-      name: name, category: category, template: "SELECT 1",
+      name: name, category: category, template: "SELECT 1", example: "SELECT 1",
       description: "#{name}.", docs: "https://example.test"
     )
   end

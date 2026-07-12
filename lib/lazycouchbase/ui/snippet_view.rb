@@ -5,7 +5,8 @@ require "ratatui_ruby"
 module Lazycouchbase
   module UI
     # Fuzzy snippet picker: the filtered list on top, a preview of the
-    # highlighted snippet (statement, description, docs link) below.
+    # highlighted snippet below. The preview shows the runnable
+    # travel-sample example; enter inserts the placeholder skeleton.
     class SnippetView
       PREVIEW_HEIGHT = 8
 
@@ -22,7 +23,7 @@ module Lazycouchbase
         )
 
         render_list(tui, frame, list_area, picker)
-        render_preview(tui, frame, preview_area, state, picker.selected)
+        render_preview(tui, frame, preview_area, picker.selected)
       end
 
       private
@@ -38,9 +39,9 @@ module Lazycouchbase
         @list.render(tui, frame, area, props)
       end
 
-      def render_preview(tui, frame, area, state, snippet)
+      def render_preview(tui, frame, area, snippet)
         preview = tui.paragraph(
-          text: preview_text(state, snippet),
+          text: preview_text(snippet),
           wrap: true,
           block: tui.block(
             title: snippet ? " #{snippet.name} " : " Preview ",
@@ -52,10 +53,10 @@ module Lazycouchbase
         frame.render_widget(preview, area)
       end
 
-      def preview_text(state, snippet)
+      def preview_text(snippet)
         return "No matching snippets" unless snippet
 
-        [snippet.statement(state.keyspace), "", snippet.description, "docs: #{snippet.docs}"].join("\n")
+        [snippet.example, "", snippet.description, "docs: #{snippet.docs}"].join("\n")
       end
     end
   end

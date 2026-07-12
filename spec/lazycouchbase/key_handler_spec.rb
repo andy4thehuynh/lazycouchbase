@@ -262,12 +262,14 @@ RSpec.describe Lazycouchbase::KeyHandler do
       [
         Lazycouchbase::Snippet.new(
           name: "Group and count", category: "Aggregation",
-          template: "SELECT country, COUNT(*) AS total FROM %{keyspace} GROUP BY country",
-          description: "Counts documents per country.", docs: "https://example.test/groupby"
+          template: "SELECT f1, COUNT(*) AS total FROM %{keyspace} GROUP BY f1",
+          example: "SELECT country, COUNT(*) AS total FROM `travel-sample`.inventory.airline GROUP BY country",
+          description: "Counts documents per group.", docs: "https://example.test/groupby"
         ),
         Lazycouchbase::Snippet.new(
           name: "Select fields", category: "Basics",
-          template: "SELECT name FROM %{keyspace} LIMIT 10",
+          template: "SELECT f1 FROM %{keyspace} LIMIT 10",
+          example: "SELECT name FROM `travel-sample`.inventory.airline LIMIT 10",
           description: "Projects specific fields.", docs: "https://example.test/select"
         )
       ]
@@ -311,14 +313,14 @@ RSpec.describe Lazycouchbase::KeyHandler do
       expect(state.snippets.matches.map(&:name)).to eq(["Select fields"])
     end
 
-    it "inserts the highlighted snippet with the keyspace filled in" do
+    it "inserts the placeholder skeleton with the keyspace filled in" do
       handler.call(key("tab"))
       handler.call(key("down"))
 
       handler.call(key("enter"))
 
       expect(state.mode).to eq(:query)
-      expect(state.query_text).to eq("SELECT name FROM `beer-sample`.`_default`.`_default` LIMIT 10")
+      expect(state.query_text).to eq("SELECT f1 FROM `beer-sample`.`_default`.`_default` LIMIT 10")
       expect(state.status_message).to eq("Projects specific fields.")
     end
 

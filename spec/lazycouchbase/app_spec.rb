@@ -166,12 +166,14 @@ RSpec.describe Lazycouchbase::App, :tui do
     expect(app.state.doc.body).to include("\"#operator\": \"PrimaryScan3\"")
   end
 
-  it "inserts a snippet into the query editor with the keyspace filled in" do
+  it "inserts a snippet skeleton with the keyspace filled and field placeholders left" do
     run_app(":", "tab", "enter", :ctrl_c)
 
     expect(app.state.mode).to eq(:query)
     expect(app.state.query_text).to include("`beer-sample`.`_default`.`_default`")
+    expect(app.state.query_text).to include("f1")
     expect(app.state.query_text).not_to include("%{keyspace}")
+    expect(app.state.query_text).not_to include("travel-sample")
   end
 
   it "opens the snippet docs in the browser with ctrl-o" do

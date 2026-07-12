@@ -71,13 +71,16 @@ below the input. `↑`/`↓` recall the last 30 executed queries (persisted in
 statement — a plain-English summary of the plan (index usage, scans, joins, sorts) opens
 in the document view with the raw plan below it.
 
-`tab` in the query editor opens a SQL++ snippet library: two dozen curated, runnable
-examples (SELECT basics, MISSING vs NULL, GROUP BY, UNNEST and array operators, joins,
-subqueries, index tooling like ADVISE) organized by topic. Fuzzy-type to narrow, `↑`/`↓`
-to browse with a live preview, and `enter` inserts the statement into the editor with the
-keyspace prefilled from your sidebar selection — ready to run or tweak. `ctrl-o` opens the
-highlighted snippet's page in the official SQL++ reference in your browser (via `xdg-open`
-or `open`; with neither available the URL is copied to the clipboard instead).
+`tab` in the query editor opens a SQL++ snippet library: two dozen curated examples
+(SELECT basics, MISSING vs NULL, GROUP BY, UNNEST and array operators, joins, subqueries,
+index tooling like ADVISE) organized by topic. Fuzzy-type to narrow and `↑`/`↓` to browse;
+the preview shows each snippet as a runnable statement against the `travel-sample` dataset.
+`enter` inserts a fill-in skeleton instead: the keyspace comes from your sidebar selection
+and everything collection-specific becomes a concise placeholder — `f1`/`f2` for fields,
+`"v1"` for values, `"k1"` for a document key, `a1` for an array field, and `ks2` for the
+second keyspace in joins. `ctrl-o` opens the highlighted snippet's page in the official
+SQL++ reference in your browser (via `xdg-open` or `open`; with neither available the URL
+is copied to the clipboard instead).
 
 `i` flips the documents pane to the indexes covering the selected collection (from
 `system:indexes`, including legacy bucket-level indexes when browsing `_default._default`).

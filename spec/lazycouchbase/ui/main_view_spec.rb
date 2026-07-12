@@ -146,7 +146,7 @@ RSpec.describe Lazycouchbase::UI::MainView, :tui do
     expect(screen).not_to include("[3] Documents")
   end
 
-  it "renders the snippet picker and preview in snippet mode" do
+  it "renders the snippet picker with a travel-sample example in the preview" do
     library = Lazycouchbase::SnippetLibrary.new
     state.snippets = Lazycouchbase::SnippetPicker.new(library.snippets)
     state.switch_mode(:snippet)
@@ -155,6 +155,7 @@ RSpec.describe Lazycouchbase::UI::MainView, :tui do
 
     expect(screen).to include("Snippets (#{library.snippets.size}/#{library.snippets.size}) /█")
     expect(screen).to include("Basics › Select fields")
+    expect(screen).to include("FROM `travel-sample`.inventory.airline")
     expect(screen).to include("docs: https://")
   end
 

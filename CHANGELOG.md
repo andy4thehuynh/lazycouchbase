@@ -14,11 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   default collection). Entries show name, keys, partial-index condition,
   and state; `enter` opens the full catalog row in the document view.
 - SQL++ snippet library: `tab` in the query editor opens a fuzzy-searchable
-  picker of curated, runnable examples (basics, filtering, aggregation,
-  arrays, joins, subqueries, indexes, functions) with a live preview.
-  `enter` inserts the statement with the keyspace prefilled from the sidebar
-  selection; `ctrl-o` opens the snippet's SQL++ reference page in the
-  browser, falling back to the clipboard when no opener is available.
+  picker of curated examples (basics, filtering, aggregation, arrays,
+  joins, subqueries, indexes, functions). The preview shows each snippet
+  as a runnable travel-sample statement; `enter` inserts a fill-in
+  skeleton with the keyspace prefilled from the sidebar selection and
+  concise placeholders (`f1` fields, `"v1"` values, `ks2` join keyspace)
+  for everything collection-specific. `ctrl-o` opens the snippet's SQL++
+  reference page in the browser, falling back to the clipboard when no
+  opener is available.
 - Query history: `↑`/`↓` in the query editor recall the last 30 executed
   queries, persisted across sessions in the XDG data directory.
 - `ctrl-e` explains the current query: a plain-English plan summary (index
