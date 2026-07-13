@@ -22,7 +22,7 @@ module Lazycouchbase
         ["", ""],
         ["Query editor", ""],
         ["  enter", "run the query"],
-        ["  shift-enter", "insert a newline"],
+        ["  ctrl-j", "insert a newline (also alt/shift-enter)"],
         ["  ← / →", "move the cursor"],
         ["  ctrl-e", "explain the query (plan + summary)"],
         ["  ↑ / ↓", "recall query history"],

@@ -5,13 +5,18 @@ module Lazycouchbase
     # Key bindings for the query editor and its snippet picker: text entry,
     # history recall, snippet insertion, and the docs link.
     class QueryKeys
+      # ctrl-j and alt+enter reach every terminal; shift+enter only arrives
+      # where the kitty keyboard protocol is active, since legacy terminals
+      # report it as a plain enter.
+      NEWLINE_CHORDS = %i[ctrl_j alt_enter shift_enter].freeze
+
       def initialize(state)
         @state = state
       end
 
       def query(event)
         return action(:explain_query) if event == :ctrl_e
-        return insert_newline if event == :shift_enter
+        return insert_newline if NEWLINE_CHORDS.any? { |chord| event == chord }
 
         case event.code
         when "esc" then close

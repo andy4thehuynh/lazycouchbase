@@ -66,9 +66,10 @@ lazycouchbase --help
 | `q` / `ctrl-c`      | Quit                                          |
 
 In the query editor, type a N1QL statement and press `enter` to run it; results are shown
-below the input. `shift-enter` inserts a newline (the input box grows with the query) and
-`←`/`→` move the cursor, so statements can be edited in place; backspacing at the start of
-a line joins it with the previous one, which also removes empty lines. `↑`/`↓` recall the
+below the input. `ctrl-j` inserts a newline (`alt+enter` too, and `shift+enter` in
+terminals that report it distinctly) and the input box grows with the query; `←`/`→` move
+the cursor, so statements can be edited in place, and backspacing at the start of a line
+joins it with the previous one, which also removes empty lines. `↑`/`↓` recall the
 last 30 executed queries (persisted in `$XDG_DATA_HOME/lazycouchbase/history.jsonl`), and
 `ctrl-e` runs `EXPLAIN` on the current statement — a plain-English summary of the plan
 (index usage, scans, joins, sorts) opens in the document view with the raw plan below it.

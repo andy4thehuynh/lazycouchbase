@@ -177,12 +177,22 @@ RSpec.describe Lazycouchbase::KeyHandler do
       expect(state.query_text).to eq("SELEC")
     end
 
-    it "inserts a newline with shift+enter and stays in the editor" do
+    it "inserts a newline with ctrl-j and stays in the editor" do
       state.query_text = "SELECT 1"
 
-      handler.call(key("enter", modifiers: ["shift"]))
+      handler.call(key("j", modifiers: ["ctrl"]))
 
       expect(state.query_text).to eq("SELECT 1\n")
+      expect(state.mode).to eq(:query)
+    end
+
+    it "inserts a newline with alt+enter and shift+enter" do
+      state.query_text = "SELECT 1"
+
+      handler.call(key("enter", modifiers: ["alt"]))
+      handler.call(key("enter", modifiers: ["shift"]))
+
+      expect(state.query_text).to eq("SELECT 1\n\n")
       expect(state.mode).to eq(:query)
     end
 
